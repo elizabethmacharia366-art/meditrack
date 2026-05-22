@@ -56,7 +56,6 @@ export default function Register() {
               className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               <option value="">Select role</option>
-              <option value="admin">Admin</option>
               <option value="doctor">Doctor</option>
               <option value="patient">Patient</option>
               <option value="hospital">Hospital</option>
