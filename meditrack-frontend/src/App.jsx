@@ -1,11 +1,12 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import ProtectedRoute from "./components/protectedrouted";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "./components/protectedroute";
+
+import DashboardLanding from "./pages/dashboardlanding";
 
 import AdminDashboard from "./pages/admin/admindashboard";
 import ManageDoctors from "./pages/admin/managedoctors";
 import ManagePatients from "./pages/admin/managepatients";
 import ManageHospitals from "./pages/admin/managehospitals";
-import ManageAppointments from "./pages/admin/manageappointments";
 
 import DoctorDashboard from "./pages/doctor/doctordashboard";
 import Patients from "./pages/doctor/patient";
@@ -27,6 +28,8 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/" element={<DashboardLanding />} />
+
         <Route
           path="/admin"
           element={
@@ -56,14 +59,6 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <ManageHospitals />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/manage-appointments"
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <ManageAppointments />
             </ProtectedRoute>
           }
         />
@@ -139,6 +134,8 @@ function App() {
 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

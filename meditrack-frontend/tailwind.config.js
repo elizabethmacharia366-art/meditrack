@@ -1,16 +1,15 @@
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,jsx,ts,tsx}"
-  ],
+module.exports = {
+  content: ["./src/**/*.{js,jsx,ts,tsx}", "./public/index.html"], 
   theme: {
     extend: {
       colors: {
-        medicalBlue: "#2563EB",
-        tealGreen: "#14B8A6",
-        softWhite: "#F8FAFC",
-        darkGray: "#1E293B",
-        alertRed: "#EF4444",
+        primary: "#2563EB",   
+        secondary: "#16A34A", 
+        accent: "#0D9488",    
+        warning: "#F59E0B",   
+      },
+      fontFamily: {
+        sans: ["Inter", "Segoe UI", "Roboto", "sans-serif"],
       },
     },
   },

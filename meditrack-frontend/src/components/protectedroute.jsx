@@ -5,7 +5,11 @@ import { RoleContext } from "../context/RoleContext";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { user } = useContext(AuthContext);
+
   const { role } = useContext(RoleContext);
+
+  console.log("AuthContext user:", user);
+  console.log("RoleContext role:", role);
 
   if (!user) {
     return <Navigate to="/login" replace />;
