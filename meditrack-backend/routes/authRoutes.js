@@ -1,9 +1,88 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, adminLogin } = require('../controllers/authController');
+const { register, login, adminLogin, me } = require('../controllers/authController');
+const { requireAuth } = require('../middleware/auth');
 
+/**
+ * @openapi
+ * /api/auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Register a new patient or doctor
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { $ref: '#/components/schemas/RegisterInput' }
+ *     responses:
+ *       201:
+ *         description: User created
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/AuthResponse' }
+ *       400: { $ref: '#/components/responses/ValidationError' }
+ *       403: { $ref: '#/components/responses/Forbidden' }
+ *       409: { $ref: '#/components/responses/ValidationError' }
+ */
 router.post('/register', register);
+
+/**
+ * @openapi
+ * /api/auth/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Log in with email + password
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { $ref: '#/components/schemas/LoginInput' }
+ *     responses:
+ *       200:
+ *         description: Authenticated
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/AuthResponse' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ */
 router.post('/login', login);
+
+/**
+ * @openapi
+ * /api/auth/admin-login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Admin login using the shared admin secret
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { $ref: '#/components/schemas/AdminLoginInput' }
+ *     responses:
+ *       200:
+ *         description: Authenticated as admin
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/AuthResponse' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       403: { $ref: '#/components/responses/Forbidden' }
+ */
 router.post('/admin-login', adminLogin);
+
+/**
+ * @openapi
+ * /api/auth/me:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Get the currently authenticated user
+ *     responses:
+ *       200:
+ *         description: Current user
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ */
+router.get('/me', requireAuth, me);
 
 module.exports = router;

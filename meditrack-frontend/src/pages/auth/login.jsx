@@ -5,16 +5,30 @@ import { useNavigate } from "react-router-dom";
 export default function Login() {
   const { login } = useContext(AuthContext);
   const [formData, setFormData] = useState({ email: "", password: "", role: "" });
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    login({ email: formData.email, role: formData.role });
-    navigate(`/${formData.role}`);
+    setError("");
+    if (!formData.email || !formData.password || !formData.role) {
+      setError("Email, password and role are required.");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const u = await login(formData);
+      navigate(`/${u.role}`);
+    } catch (err) {
+      setError(err.response?.data?.error || "Login failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -59,15 +73,21 @@ export default function Login() {
               <option value="admin">Admin</option>
               <option value="doctor">Doctor</option>
               <option value="patient">Patient</option>
-              <option value="hospital">Hospital</option>
             </select>
           </div>
 
+          {error && (
+            <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded p-2">
+              {error}
+            </div>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg shadow transition"
+            disabled={submitting}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-2 rounded-lg shadow transition"
           >
-            Login
+            {submitting ? "Logging in..." : "Login"}
           </button>
         </form>
       </div>
