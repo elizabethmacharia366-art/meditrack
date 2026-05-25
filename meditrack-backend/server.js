@@ -1,39 +1,36 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
 require('dotenv').config();
+const dns = require('dns');
+const mongoose = require('mongoose');
+const app = require('./app');
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-const logger = require('./middleware/logger');
-const auth = require('./middleware/auth');
-const errorHandler = require('./middleware/errorHandler');
-
-app.use(logger);
-app.use(auth);
-
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Atlas Connected"))
-  .catch(err => console.error(err));
-
-const patientsRoutes = require('./routes/patientsRoutes');
-const doctorsRoutes = require('./routes/doctorsRoutes');
-const appointmentsRoutes = require('./routes/appointmentsRoutes');
-const prescriptionsRoutes = require('./routes/prescriptionsRoutes');
-const hospitalsRoutes = require('./routes/hospitalsRoutes');
-const authRoutes = require('./routes/authRoutes');
-
-app.get('/', (req, res) => res.send('MediTrack Backend Running'));
-
-app.use('/api/patients', patientsRoutes);
-app.use('/api/doctors', doctorsRoutes);
-app.use('/api/appointments', appointmentsRoutes);
-app.use('/api/prescriptions', prescriptionsRoutes);
-app.use('/api/hospitals', hospitalsRoutes);
-app.use('/api/auth', authRoutes);
-
-app.use(errorHandler);
+// Force Node's DNS resolver to use public DNS servers. This is required when
+// the local network blocks/times-out SRV lookups against MongoDB Atlas
+// (which the mongodb+srv:// scheme depends on).
+const DNS_SERVERS = (process.env.DNS_SERVERS || '1.1.1.1,8.8.8.8')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+try {
+  dns.setServers(DNS_SERVERS);
+} catch (_) {
+  // ignore; Node will fall back to system DNS
+}
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+mongoose
+  .connect(process.env.MONGO_URI, {
+    dbName: process.env.MONGO_DB || 'meditrack',
+    serverSelectionTimeoutMS: 15000,
+  })
+  .then(() => {
+    console.log('MongoDB Atlas Connected');
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Swagger UI: http://localhost:${PORT}/api/docs`);
+    });
+  })
+  .catch((err) => {
+    console.error('MongoDB connection failed:', err.message);
+    process.exit(1);
+  });

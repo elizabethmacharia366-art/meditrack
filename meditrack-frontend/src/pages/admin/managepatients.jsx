@@ -6,7 +6,26 @@ import {
   deletePatient,
 } from "../../service/api";
 
-const emptyPatient = { fullName: "", age: "", gender: "", contact: "" };
+const emptyPatient = { fullName: "", age: "", gender: "", contact: "", bloodGroup: "" };
+
+// Build a payload that omits empty fields so we don't trip Mongoose enum
+// validation on `gender` / `bloodGroup`.
+const buildPayload = (form) => {
+  const out = { fullName: form.fullName.trim() };
+  if (form.age !== "" && form.age !== null) out.age = Number(form.age);
+  if (form.gender) out.gender = form.gender;
+  if (form.contact?.trim()) out.contact = form.contact.trim();
+  if (form.bloodGroup) out.bloodGroup = form.bloodGroup;
+  return out;
+};
+
+// Format a backend error response (which uses { error, details? }) for display.
+const formatError = (err, fallback) => {
+  const data = err?.response?.data;
+  if (!data) return err?.message || fallback;
+  if (data.details?.length) return `${data.error}: ${data.details.join(", ")}`;
+  return data.error || data.message || fallback;
+};
 
 export default function Managepatients() {
   const [patients, setPatients] = useState([]);
@@ -22,7 +41,7 @@ export default function Managepatients() {
       setPatients(Array.isArray(res.data) ? res.data : []);
       setError("");
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to load patients");
+      setError(formatError(err, "Failed to load patients"));
     } finally {
       setLoading(false);
     }
@@ -40,12 +59,7 @@ export default function Managepatients() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.fullName.trim()) return;
-    const payload = {
-      fullName: form.fullName.trim(),
-      age: form.age === "" ? undefined : Number(form.age),
-      gender: form.gender.trim(),
-      contact: form.contact.trim(),
-    };
+    const payload = buildPayload(form);
     try {
       if (editingId) {
         await updatePatient(editingId, payload);
@@ -53,9 +67,10 @@ export default function Managepatients() {
         await createPatient(payload);
       }
       resetForm();
+      setError("");
       await loadPatients();
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to save patient");
+      setError(formatError(err, "Failed to save patient"));
     }
   };
 
@@ -66,6 +81,7 @@ export default function Managepatients() {
       age: p.age ?? "",
       gender: p.gender || "",
       contact: p.contact || "",
+      bloodGroup: p.bloodGroup || "",
     });
   };
 
@@ -75,7 +91,7 @@ export default function Managepatients() {
       await deletePatient(id);
       await loadPatients();
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to delete patient");
+      setError(formatError(err, "Failed to delete patient"));
     }
   };
 
@@ -103,13 +119,26 @@ export default function Managepatients() {
           onChange={(e) => setForm({ ...form, age: e.target.value })}
           className="border p-2 w-24"
         />
-        <input
-          type="text"
-          placeholder="Gender"
+        <select
           value={form.gender}
           onChange={(e) => setForm({ ...form, gender: e.target.value })}
           className="border p-2"
-        />
+        >
+          <option value="">Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+        <select
+          value={form.bloodGroup}
+          onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })}
+          className="border p-2"
+        >
+          <option value="">Blood group</option>
+          {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((bg) => (
+            <option key={bg} value={bg}>{bg}</option>
+          ))}
+        </select>
         <input
           type="text"
           placeholder="Contact"
@@ -143,6 +172,7 @@ export default function Managepatients() {
               <th className="border p-2 text-left">Name</th>
               <th className="border p-2 text-left">Age</th>
               <th className="border p-2 text-left">Gender</th>
+              <th className="border p-2 text-left">Blood</th>
               <th className="border p-2 text-left">Contact</th>
               <th className="border p-2 text-left">Actions</th>
             </tr>
@@ -150,7 +180,7 @@ export default function Managepatients() {
           <tbody>
             {patients.length === 0 ? (
               <tr>
-                <td className="border p-2 text-center" colSpan={5}>
+                <td className="border p-2 text-center" colSpan={6}>
                   No patients yet.
                 </td>
               </tr>
@@ -160,6 +190,7 @@ export default function Managepatients() {
                   <td className="border p-2">{pat.fullName}</td>
                   <td className="border p-2">{pat.age ?? "-"}</td>
                   <td className="border p-2">{pat.gender || "-"}</td>
+                  <td className="border p-2">{pat.bloodGroup || "-"}</td>
                   <td className="border p-2">{pat.contact || "-"}</td>
                   <td className="border p-2 space-x-2">
                     <button

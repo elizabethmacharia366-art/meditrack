@@ -3,18 +3,32 @@ import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export default function Register() {
-  const { login } = useContext(AuthContext); 
-  const [formData, setFormData] = useState({ email: "", password: "", role: "" });
+  const { register } = useContext(AuthContext);
+  const [formData, setFormData] = useState({ name: "", email: "", password: "", role: "" });
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    login({ email: formData.email, role: formData.role });
-    navigate(`/${formData.role}`);
+    setError("");
+    if (!formData.name || !formData.email || !formData.password || !formData.role) {
+      setError("All fields are required.");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const u = await register(formData);
+      navigate(`/${u.role}`);
+    } catch (err) {
+      setError(err.response?.data?.error || "Registration failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -23,6 +37,18 @@ export default function Register() {
         <h1 className="text-3xl font-bold mb-6 text-center text-green-600">Register</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block mb-2 font-medium text-gray-700">Full name</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="Your name"
+            />
+          </div>
+
           <div>
             <label className="block mb-2 font-medium text-gray-700">Email</label>
             <input
@@ -58,15 +84,21 @@ export default function Register() {
               <option value="">Select role</option>
               <option value="doctor">Doctor</option>
               <option value="patient">Patient</option>
-              <option value="hospital">Hospital</option>
             </select>
           </div>
 
+          {error && (
+            <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded p-2">
+              {error}
+            </div>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg shadow-md transition"
+            disabled={submitting}
+            className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold py-2 rounded-lg shadow-md transition"
           >
-            Sign Up
+            {submitting ? "Creating..." : "Sign Up"}
           </button>
         </form>
       </div>

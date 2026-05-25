@@ -4,6 +4,17 @@ const API = axios.create({
   baseURL: "http://localhost:5000/api",
 });
 
+// Always read the latest token from localStorage so requests stay authorized
+// even after a page refresh.
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const getPatients = () => API.get("/patients");
 export const createPatient = (data) => API.post("/patients", data);
 export const updatePatient = (id, data) => API.put(`/patients/${id}`, data);
@@ -32,8 +43,17 @@ export const deleteHospital = (id) => API.delete(`/hospitals/${id}`);
 
 export const register = (data) => API.post('/auth/register', data);
 export const login = (data) => API.post('/auth/login', data);
+export const adminLogin = (data) => API.post('/auth/admin-login', data);
+export const me = () => API.get('/auth/me');
 
 export const setAuthToken = (token) => {
-  if (token) API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  else delete API.defaults.headers.common['Authorization'];
+  if (token) {
+    localStorage.setItem('token', token);
+    API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    localStorage.removeItem('token');
+    delete API.defaults.headers.common['Authorization'];
+  }
 };
+
+export default API;
