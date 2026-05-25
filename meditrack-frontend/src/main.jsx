@@ -2,8 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./Index.css";
-import { AuthProvider } from "./context/AuthContext";
-import { RoleProvider } from "./context/RoleContext";
+import { AuthProvider } from "./context/authcontext";
+import { RoleProvider } from "./context/rolecontext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import PrescriptionForm from "../../components/PrescriptionForm";
+import PrescriptionForm from "../../components/prescriptionform";
 
 export default function Prescriptions() {
   const [prescriptions, setPrescriptions] = useState([]);

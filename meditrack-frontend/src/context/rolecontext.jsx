@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from "react";
-import { AuthContext } from "./AuthContext";
+import { AuthContext } from "./authcontext";
 
 export const RoleContext = createContext();
 

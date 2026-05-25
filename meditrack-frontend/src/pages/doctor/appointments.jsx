@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import AppointmentTable from "../../components/AppointmentTable";
+import AppointmentTable from "../../components/appointmenttable";
 
 export default function Appointments() {
   const [appointments] = useState([
