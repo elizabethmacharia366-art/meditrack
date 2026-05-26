@@ -8,6 +8,10 @@ export default function DoctorDashboard() {
       <WelcomeBanner subtitle="Manage your patients, prescriptions, and appointments." />
       <h1 className="text-2xl font-bold mb-6">Doctor Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Link to="/doctor/profile" className="bg-white shadow-md rounded-lg p-4 hover:bg-blue-50">
+          <h2 className="text-lg font-semibold">My Profile</h2>
+          <p className="text-gray-600">Set hospital, contact, specialty, and schedule.</p>
+        </Link>
         <Link to="/doctor/patients" className="bg-white shadow-md rounded-lg p-4 hover:bg-blue-50">
           <h2 className="text-lg font-semibold">Patients</h2>
           <p className="text-gray-600">View your patients & their history.</p>

@@ -2,6 +2,7 @@ const {
   startDB, stopDB, clearDB, buildApp, request, registerUser, adminLogin, auth,
 } = require('./setup');
 const Doctor = require('../models/Doctors');
+const Hospital = require('../models/Hospitals');
 
 let app;
 let adminToken;
@@ -42,6 +43,20 @@ describe('Doctors', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThanOrEqual(1); // doctor auto-profile from register
+  });
+
+  test('GET /api/doctors hides pending doctors from patients', async () => {
+    const pending = await request(app).post('/api/auth/register').send({
+      name: 'Dr Pending',
+      email: 'pending-doc@example.com',
+      password: 'password123',
+      role: 'doctor',
+    });
+    expect(pending.status).toBe(201);
+
+    const res = await request(app).get('/api/doctors').set(auth(patientToken));
+    expect(res.status).toBe(200);
+    expect(res.body.some((doctor) => doctor.userId?.email === 'pending-doc@example.com')).toBe(false);
   });
 
   test('GET /api/doctors/me returns the logged-in doctor profile', async () => {
@@ -87,6 +102,45 @@ describe('Doctors', () => {
       .set(auth(doctorToken))
       .send({ fullName: 'Hijack' });
     expect(forbidden.status).toBe(403);
+  });
+
+  test('PUT /api/doctors/:id lets doctor complete hospital contact and specialty profile', async () => {
+    const me = await Doctor.findOne({ userId: doctorUser.id });
+    const hospital = await Hospital.create({ name: 'City Hospital', location: 'Downtown' });
+
+    const res = await request(app)
+      .put(`/api/doctors/${me._id}`)
+      .set(auth(doctorToken))
+      .send({
+        fullName: 'Dr A',
+        specialty: 'Cardiology',
+        contact: '+1 555 0100',
+        hospitalId: hospital._id,
+        schedule: [{ day: 'Monday', time: '09:00-13:00' }],
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.specialty).toBe('Cardiology');
+    expect(res.body.contact).toBe('+1 555 0100');
+    expect(res.body.hospitalId.name).toBe('City Hospital');
+    expect(res.body.schedule[0].day).toBe('Monday');
+  });
+
+  test('PUT /api/doctors/:id rejects unknown hospital id', async () => {
+    const me = await Doctor.findOne({ userId: doctorUser.id });
+
+    const res = await request(app)
+      .put(`/api/doctors/${me._id}`)
+      .set(auth(doctorToken))
+      .send({
+        fullName: 'Dr A',
+        specialty: 'Cardiology',
+        contact: '+1 555 0100',
+        hospitalId: '507f1f77bcf86cd799439011',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Hospital not found/);
   });
 
   test('DELETE /api/doctors/:id admin only', async () => {

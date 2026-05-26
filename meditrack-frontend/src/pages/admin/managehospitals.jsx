@@ -160,6 +160,7 @@ export default function ManageHospitals() {
           <thead>
             <tr className="bg-gray-100">
               <th className="border p-2 text-left">Name</th>
+              <th className="border p-2 text-left">Hospital ID</th>
               <th className="border p-2 text-left">Location</th>
               <th className="border p-2 text-left">Departments</th>
               <th className="border p-2 text-left">Contact</th>
@@ -169,7 +170,7 @@ export default function ManageHospitals() {
           <tbody>
             {hospitals.length === 0 ? (
               <tr>
-                <td className="border p-2 text-center" colSpan={5}>
+                <td className="border p-2 text-center" colSpan={6}>
                   No hospitals yet.
                 </td>
               </tr>
@@ -177,6 +178,7 @@ export default function ManageHospitals() {
               hospitals.map((hosp) => (
                 <tr key={hosp._id}>
                   <td className="border p-2">{hosp.name}</td>
+                  <td className="border p-2 font-mono text-xs text-gray-600">{hosp._id}</td>
                   <td className="border p-2">{hosp.location}</td>
                   <td className="border p-2">
                     {Array.isArray(hosp.departments)

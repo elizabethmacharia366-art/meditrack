@@ -33,6 +33,7 @@ export const updatePrescription = (id, data) => API.put(`/prescriptions/${id}`, 
 export const deletePrescription = (id) => API.delete(`/prescriptions/${id}`);
 
 export const getDoctors = () => API.get("/doctors");
+export const getMyDoctor = () => API.get("/doctors/me");
 export const createDoctor = (data) => API.post("/doctors", data);
 export const updateDoctor = (id, data) => API.put(`/doctors/${id}`, data);
 export const deleteDoctor = (id) => API.delete(`/doctors/${id}`);
