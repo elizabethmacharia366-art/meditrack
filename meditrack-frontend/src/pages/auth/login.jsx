@@ -6,6 +6,7 @@ export default function Login() {
   const { login } = useContext(AuthContext);
   const [formData, setFormData] = useState({ email: "", password: "", role: "" });
   const [error, setError] = useState("");
+  const [welcome, setWelcome] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -23,10 +24,10 @@ export default function Login() {
     try {
       setSubmitting(true);
       const u = await login(formData);
-      navigate(`/${u.role}`);
+      setWelcome(`Welcome back, ${u.name || u.email}!`);
+      setTimeout(() => navigate(`/${u.role}`), 1200);
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
-    } finally {
       setSubmitting(false);
     }
   };
@@ -82,12 +83,19 @@ export default function Login() {
             </div>
           )}
 
+          {welcome && (
+            <div className="text-green-700 text-sm bg-green-50 border border-green-200 rounded p-3 text-center font-medium">
+              {welcome}
+              <div className="text-xs text-green-600 mt-1">Redirecting to your dashboard…</div>
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !!welcome}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-2 rounded-lg shadow transition"
           >
-            {submitting ? "Logging in..." : "Login"}
+            {welcome ? "Signed in" : submitting ? "Logging in..." : "Login"}
           </button>
         </form>
       </div>

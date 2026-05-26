@@ -6,6 +6,7 @@ export default function Register() {
   const { register } = useContext(AuthContext);
   const [formData, setFormData] = useState({ name: "", email: "", password: "", role: "" });
   const [error, setError] = useState("");
+  const [welcome, setWelcome] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -23,10 +24,10 @@ export default function Register() {
     try {
       setSubmitting(true);
       const u = await register(formData);
-      navigate(`/${u.role}`);
+      setWelcome(`Welcome, ${u.name || u.email}! Your account is ready.`);
+      setTimeout(() => navigate(`/${u.role}`), 1500);
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed");
-    } finally {
       setSubmitting(false);
     }
   };
@@ -93,12 +94,19 @@ export default function Register() {
             </div>
           )}
 
+          {welcome && (
+            <div className="text-green-700 text-sm bg-green-50 border border-green-200 rounded p-3 text-center font-medium">
+              {welcome}
+              <div className="text-xs text-green-600 mt-1">Taking you to your dashboard…</div>
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !!welcome}
             className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold py-2 rounded-lg shadow-md transition"
           >
-            {submitting ? "Creating..." : "Sign Up"}
+            {welcome ? "Account created" : submitting ? "Creating..." : "Sign Up"}
           </button>
         </form>
       </div>
