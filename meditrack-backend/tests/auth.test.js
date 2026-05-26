@@ -90,6 +90,39 @@ describe('Auth', () => {
     expect(res.body.token).toBeUndefined();
   });
 
+  test('pending patients cannot use email verification endpoints to bypass approval', async () => {
+    const token = 'pending-verification-token';
+    const pending = await User.create({
+      name: 'Pending Verify',
+      email: 'pending-verify@example.com',
+      password: 'password123',
+      role: 'patient',
+      provider: 'email',
+      verificationToken: token,
+      verificationExpires: new Date(Date.now() + 60 * 60 * 1000),
+    });
+    expect(pending.status).toBe('pending');
+    expect(pending.emailVerified).toBe(false);
+
+    const verify = await request(app)
+      .post('/api/auth/verify-email')
+      .send({ token });
+    expect(verify.status).toBe(403);
+    expect(verify.body.status).toBe('pending');
+
+    const afterVerify = await User.findById(pending._id).select(
+      '+verificationToken +verificationExpires',
+    );
+    expect(afterVerify.emailVerified).toBe(false);
+    expect(afterVerify.verificationToken).toBe(token);
+
+    const resend = await request(app)
+      .post('/api/auth/resend-verification')
+      .send({ email: 'pending-verify@example.com' });
+    expect(resend.status).toBe(403);
+    expect(resend.body.status).toBe('pending');
+  });
+
   test('POST /api/auth/register rejects role=admin', async () => {
     const res = await request(app).post('/api/auth/register').send({
       name: 'Hacker',

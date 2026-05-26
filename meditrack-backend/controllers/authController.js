@@ -165,6 +165,12 @@ exports.verifyEmail = async (req, res, next) => {
     if (user.verificationExpires && user.verificationExpires < new Date()) {
       return res.status(400).json({ error: 'Verification link has expired' });
     }
+    if (user.status !== 'approved') {
+      return res.status(403).json({
+        error: 'Your account is awaiting admin approval.',
+        status: user.status,
+      });
+    }
 
     user.emailVerified = true;
     user.verificationToken = undefined;
@@ -186,6 +192,12 @@ exports.resendVerification = async (req, res, next) => {
     if (!user || user.emailVerified) {
       return res.json({
         message: 'If the account exists and is unverified, a new link was sent.',
+      });
+    }
+    if (user.status !== 'approved') {
+      return res.status(403).json({
+        error: 'Your account is awaiting admin approval.',
+        status: user.status,
       });
     }
 
