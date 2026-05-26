@@ -1,7 +1,7 @@
 require('dotenv').config();
 const dns = require('dns');
-const mongoose = require('mongoose');
 const app = require('./app');
+const connectDB = require('./lib/db');
 
 // Force Node's DNS resolver to use public DNS servers. This is required when
 // the local network blocks/times-out SRV lookups against MongoDB Atlas
@@ -18,11 +18,7 @@ try {
 
 const PORT = process.env.PORT || 5000;
 
-mongoose
-  .connect(process.env.MONGO_URI, {
-    dbName: process.env.MONGO_DB || 'meditrack',
-    serverSelectionTimeoutMS: 15000,
-  })
+connectDB()
   .then(() => {
     console.log('MongoDB Atlas Connected');
     app.listen(PORT, () => {
