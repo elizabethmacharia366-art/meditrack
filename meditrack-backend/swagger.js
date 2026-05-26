@@ -36,8 +36,10 @@ const options = {
             id: { type: 'string' },
             name: { type: 'string' },
             email: { type: 'string' },
-            role: { type: 'string', enum: ['patient', 'doctor', 'admin'] },
+            role: { type: 'string', enum: ['patient', 'doctor', 'hospital', 'admin'] },
             provider: { type: 'string' },
+            status: { type: 'string', enum: ['pending', 'approved', 'rejected'] },
+            emailVerified: { type: 'boolean' },
           },
         },
         RegisterInput: {
@@ -47,7 +49,10 @@ const options = {
             name: { type: 'string' },
             email: { type: 'string', format: 'email' },
             password: { type: 'string', format: 'password' },
-            role: { type: 'string', enum: ['patient', 'doctor'], default: 'patient' },
+            role: { type: 'string', enum: ['patient', 'doctor', 'hospital'], default: 'patient' },
+            inviteCode: { type: 'string' },
+            location: { type: 'string' },
+            hospitalName: { type: 'string' },
           },
         },
         LoginInput: {

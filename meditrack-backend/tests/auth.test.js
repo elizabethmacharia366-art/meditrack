@@ -1,4 +1,5 @@
-const { startDB, stopDB, clearDB, buildApp, request, auth } = require('./setup');
+const { startDB, stopDB, clearDB, buildApp, request, auth, adminLogin } = require('./setup');
+const Invite = require('../models/Invite');
 
 let app;
 
@@ -10,7 +11,7 @@ afterAll(stopDB);
 beforeEach(clearDB);
 
 describe('Auth', () => {
-  test('POST /api/auth/register creates a patient user and returns a JWT', async () => {
+  test('POST /api/auth/register creates an approved patient pending email verification', async () => {
     const res = await request(app).post('/api/auth/register').send({
       name: 'Jane',
       email: 'jane@example.com',
@@ -18,8 +19,11 @@ describe('Auth', () => {
       role: 'patient',
     });
     expect(res.status).toBe(201);
-    expect(res.body.token).toEqual(expect.any(String));
+    expect(res.body.token).toBeUndefined();
     expect(res.body.role).toBe('patient');
+    expect(res.body.status).toBe('approved');
+    expect(res.body.emailVerified).toBe(false);
+    expect(res.body.verificationLink).toEqual(expect.any(String));
     expect(res.body.email).toBe('jane@example.com');
   });
 
@@ -31,6 +35,144 @@ describe('Auth', () => {
       role: 'admin',
     });
     expect(res.status).toBe(403);
+  });
+
+  test('POST /api/auth/register rejects doctor registration without an invite', async () => {
+    const res = await request(app).post('/api/auth/register').send({
+      name: 'Dr. No Invite',
+      email: 'noinvite@example.com',
+      password: 'password123',
+      role: 'doctor',
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/invite code/i);
+  });
+
+  test('doctor registers with invite, verifies email, waits for admin approval, then can login', async () => {
+    const admin = await adminLogin(app);
+    const invite = await request(app)
+      .post('/api/admin/invites')
+      .set(auth(admin.token))
+      .send({ role: 'doctor', email: 'doctor@example.com' });
+
+    expect(invite.status).toBe(201);
+    expect(invite.body.code).toEqual(expect.any(String));
+
+    const reg = await request(app).post('/api/auth/register').send({
+      name: 'Dr. Pending',
+      email: 'doctor@example.com',
+      password: 'password123',
+      role: 'doctor',
+      inviteCode: invite.body.code,
+      specialty: 'Cardiology',
+    });
+
+    expect(reg.status).toBe(201);
+    expect(reg.body.status).toBe('pending');
+    expect(reg.body.pending).toBe(true);
+    expect(reg.body.token).toBeUndefined();
+
+    const usedInvite = await Invite.findById(invite.body._id);
+    expect(String(usedInvite.usedBy)).toBe(reg.body.id);
+
+    let login = await request(app).post('/api/auth/login').send({
+      email: 'doctor@example.com',
+      password: 'password123',
+    });
+    expect(login.status).toBe(403);
+    expect(login.body.status).toBe('pending');
+
+    const token = new URL(reg.body.verificationLink).searchParams.get('token');
+    const verify = await request(app).post('/api/auth/verify-email').send({ token });
+    expect(verify.status).toBe(200);
+
+    login = await request(app).post('/api/auth/login').send({
+      email: 'doctor@example.com',
+      password: 'password123',
+    });
+    expect(login.status).toBe(403);
+    expect(login.body.status).toBe('pending');
+
+    const approval = await request(app)
+      .post(`/api/admin/users/${reg.body.id}/approve`)
+      .set(auth(admin.token));
+    expect(approval.status).toBe(200);
+    expect(approval.body.status).toBe('approved');
+
+    login = await request(app).post('/api/auth/login').send({
+      email: 'doctor@example.com',
+      password: 'password123',
+    });
+    expect(login.status).toBe(200);
+    expect(login.body.token).toEqual(expect.any(String));
+  });
+
+  test('hospital registration requires matching invite and location', async () => {
+    const admin = await adminLogin(app);
+    const invite = await request(app)
+      .post('/api/admin/invites')
+      .set(auth(admin.token))
+      .send({ role: 'hospital', email: 'hospital@example.com' });
+
+    const missingLocation = await request(app).post('/api/auth/register').send({
+      name: 'Metro Hospital',
+      email: 'hospital@example.com',
+      password: 'password123',
+      role: 'hospital',
+      inviteCode: invite.body.code,
+    });
+    expect(missingLocation.status).toBe(400);
+
+    const wrongEmail = await request(app).post('/api/auth/register').send({
+      name: 'Metro Hospital',
+      email: 'other@example.com',
+      password: 'password123',
+      role: 'hospital',
+      inviteCode: invite.body.code,
+      location: 'Nairobi',
+    });
+    expect(wrongEmail.status).toBe(400);
+    expect(wrongEmail.body.error).toMatch(/different email/i);
+
+    const reg = await request(app).post('/api/auth/register').send({
+      name: 'Metro Hospital',
+      email: 'hospital@example.com',
+      password: 'password123',
+      role: 'hospital',
+      inviteCode: invite.body.code,
+      location: 'Nairobi',
+    });
+    expect(reg.status).toBe(201);
+    expect(reg.body.status).toBe('pending');
+  });
+
+  test('admins can reject pending users', async () => {
+    const admin = await adminLogin(app);
+    const invite = await request(app)
+      .post('/api/admin/invites')
+      .set(auth(admin.token))
+      .send({ role: 'doctor' });
+    const reg = await request(app).post('/api/auth/register').send({
+      name: 'Dr. Reject',
+      email: 'reject@example.com',
+      password: 'password123',
+      role: 'doctor',
+      inviteCode: invite.body.code,
+    });
+
+    const rejection = await request(app)
+      .post(`/api/admin/users/${reg.body.id}/reject`)
+      .set(auth(admin.token))
+      .send({ reason: 'Credentials could not be verified' });
+    expect(rejection.status).toBe(200);
+    expect(rejection.body.status).toBe('rejected');
+
+    const login = await request(app).post('/api/auth/login').send({
+      email: 'reject@example.com',
+      password: 'password123',
+    });
+    expect(login.status).toBe(403);
+    expect(login.body.status).toBe('rejected');
   });
 
   test('POST /api/auth/register rejects missing password', async () => {
@@ -48,10 +190,12 @@ describe('Auth', () => {
     expect(res.status).toBe(409);
   });
 
-  test('POST /api/auth/login succeeds with correct credentials', async () => {
-    await request(app).post('/api/auth/register').send({
+  test('POST /api/auth/login succeeds after email verification', async () => {
+    const reg = await request(app).post('/api/auth/register').send({
       name: 'Lo', email: 'lo@example.com', password: 'password123',
     });
+    const token = new URL(reg.body.verificationLink).searchParams.get('token');
+    await request(app).post('/api/auth/verify-email').send({ token });
     const res = await request(app).post('/api/auth/login').send({
       email: 'lo@example.com', password: 'password123',
     });
@@ -69,14 +213,21 @@ describe('Auth', () => {
     expect(res.status).toBe(401);
   });
 
-  test('POST /api/auth/admin-login creates an admin on first login', async () => {
-    const res = await request(app).post('/api/auth/admin-login').send({
-      email: 'admin@example.com',
-      password: process.env.ADMIN_SECRET,
-    });
-    expect(res.status).toBe(200);
+  test('POST /api/auth/admin-login authenticates an existing admin', async () => {
+    const res = await adminLogin(app, 'admin@example.com');
+    expect(res.user.role).toBe('admin');
+    expect(res.token).toEqual(expect.any(String));
+  });
+
+  test('POST /api/admin/admins lets an existing admin create another admin', async () => {
+    const admin = await adminLogin(app);
+    const res = await request(app)
+      .post('/api/admin/admins')
+      .set(auth(admin.token))
+      .send({ name: 'Second Admin', email: 'second@example.com', password: 'password123' });
+    expect(res.status).toBe(201);
     expect(res.body.role).toBe('admin');
-    expect(res.body.token).toEqual(expect.any(String));
+    expect(res.body.status).toBe('approved');
   });
 
   test('POST /api/auth/admin-login rejects wrong secret', async () => {
@@ -95,7 +246,12 @@ describe('Auth', () => {
     const reg = await request(app).post('/api/auth/register').send({
       name: 'Me', email: 'me@example.com', password: 'password123',
     });
-    const res = await request(app).get('/api/auth/me').set(auth(reg.body.token));
+    const token = new URL(reg.body.verificationLink).searchParams.get('token');
+    await request(app).post('/api/auth/verify-email').send({ token });
+    const login = await request(app).post('/api/auth/login').send({
+      email: 'me@example.com', password: 'password123',
+    });
+    const res = await request(app).get('/api/auth/me').set(auth(login.body.token));
     expect(res.status).toBe(200);
     expect(res.body.email).toBe('me@example.com');
   });

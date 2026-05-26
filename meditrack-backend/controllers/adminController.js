@@ -53,6 +53,35 @@ exports.rejectUser = async (req, res, next) => {
   }
 };
 
+exports.createAdmin = async (req, res, next) => {
+  try {
+    const { name = 'Admin', email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const existing = await User.findOne({ email: normalizedEmail });
+    if (existing) return res.status(409).json({ error: 'Email already registered' });
+
+    const user = await User.create({
+      name,
+      email: normalizedEmail,
+      password,
+      role: 'admin',
+      provider: 'email',
+      status: 'approved',
+      emailVerified: true,
+      approvedAt: new Date(),
+      approvedBy: req.user.id,
+    });
+
+    res.status(201).json(user.toSafeJSON());
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.listInvites = async (_req, res, next) => {
   try {
     const invites = await Invite.find()
@@ -68,8 +97,8 @@ exports.listInvites = async (_req, res, next) => {
 exports.createInvite = async (req, res, next) => {
   try {
     const { role = 'doctor', email, note, expiresInDays } = req.body || {};
-    if (role !== 'doctor') {
-      return res.status(400).json({ error: 'Only doctor invites are supported' });
+    if (!['doctor', 'hospital'].includes(role)) {
+      return res.status(400).json({ error: 'Only doctor and hospital invites are supported' });
     }
 
     // Ensure uniqueness — try a few times in case of collision.

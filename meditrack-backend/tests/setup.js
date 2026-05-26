@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const request = require('supertest');
+const User = require('../models/User');
+const Invite = require('../models/Invite');
 
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret';
@@ -33,18 +35,71 @@ function buildApp() {
   return require('../app');
 }
 
-// Register + return { token, user, app }.
+async function ensureTestAdmin(email = 'admin@test.local', password = process.env.ADMIN_SECRET) {
+  let admin = await User.findOne({ email });
+  if (!admin) {
+    admin = await User.create({
+      name: 'Test Admin',
+      email,
+      password,
+      role: 'admin',
+      provider: 'email',
+      status: 'approved',
+      emailVerified: true,
+      approvedAt: new Date(),
+    });
+  }
+  return admin;
+}
+
+async function verifyFromResponse(app, body) {
+  if (!body.verificationLink) return;
+  const token = new URL(body.verificationLink).searchParams.get('token');
+  await request(app).post('/api/auth/verify-email').send({ token });
+}
+
+// Register through the public flow, then return { token, user } ready for protected tests.
 async function registerUser(app, { name, email, password, role }) {
-  const res = await request(app)
-    .post('/api/auth/register')
-    .send({ name, email, password, role });
+  const payload = { name, email, password, role };
+  if (['doctor', 'hospital'].includes(role)) {
+    const admin = await ensureTestAdmin();
+    const invite = await Invite.create({
+      code: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`.toUpperCase(),
+      role,
+      email,
+      createdBy: admin._id,
+    });
+    payload.inviteCode = invite.code;
+    if (role === 'hospital') payload.location = 'Test City';
+  }
+
+  const res = await request(app).post('/api/auth/register').send(payload);
   if (res.status !== 201) {
     throw new Error(`register failed (${res.status}): ${JSON.stringify(res.body)}`);
   }
-  return { token: res.body.token, user: res.body };
+
+  await verifyFromResponse(app, res.body);
+
+  if (res.body.status === 'pending') {
+    const adminSession = await adminLogin(app);
+    const approval = await request(app)
+      .post(`/api/admin/users/${res.body.id}/approve`)
+      .set(auth(adminSession.token));
+    if (approval.status !== 200) {
+      throw new Error(`approval failed (${approval.status}): ${JSON.stringify(approval.body)}`);
+    }
+  }
+
+  const login = await request(app).post('/api/auth/login').send({ email, password });
+  if (login.status !== 200) {
+    throw new Error(`login failed (${login.status}): ${JSON.stringify(login.body)}`);
+  }
+
+  return { token: login.body.token, user: login.body };
 }
 
 async function adminLogin(app, email = 'admin@test.local') {
+  await ensureTestAdmin(email);
   const res = await request(app)
     .post('/api/auth/admin-login')
     .send({ email, password: process.env.ADMIN_SECRET });

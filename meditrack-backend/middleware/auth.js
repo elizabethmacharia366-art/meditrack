@@ -14,7 +14,8 @@ const attachUser = async (req, _res, next) => {
 
     const payload = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(payload.id).select('-password');
-    if (user) {
+    const active = user && user.status === 'approved' && (user.role === 'admin' || user.emailVerified);
+    if (active) {
       req.user = { id: String(user._id), role: user.role, name: user.name, email: user.email };
     }
     next();

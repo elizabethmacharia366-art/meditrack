@@ -20,12 +20,12 @@ const userSchema = new mongoose.Schema({
   },
   provider: { type: String, enum: ['email', 'google', 'other'], default: 'email' },
   providerId: { type: String },
-  role: { type: String, enum: ['patient', 'doctor', 'admin'], default: 'patient' },
+  role: { type: String, enum: ['patient', 'doctor', 'hospital', 'admin'], default: 'patient' },
 
   // Approval workflow.
   // - patient: auto 'approved' on register
-  // - doctor: 'pending' unless registered with a valid invite code
-  // - admin:  always 'approved' (created via /admin-login by another admin)
+  // - doctor/hospital: 'pending' after invite-backed registration
+  // - admin:  always 'approved' and created only by an existing admin
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema({
   verificationToken: { type: String, select: false },
   verificationExpires: { type: Date, select: false },
 
-  // Invite tracking (for doctors).
+  // Invite tracking (for doctors/hospitals).
   inviteCode: { type: String, trim: true },
 }, { timestamps: true });
 

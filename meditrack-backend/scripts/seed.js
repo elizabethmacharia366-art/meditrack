@@ -22,6 +22,7 @@ const Doctor = require('../models/Doctors');
 const Hospital = require('../models/Hospitals');
 const Appointment = require('../models/Appointments');
 const Prescription = require('../models/Prescriptions');
+const Invite = require('../models/Invite');
 
 const MONGO_URI = process.env.MONGO_URI;
 const DB_NAME = process.env.MONGO_DB || 'meditrack';
@@ -61,6 +62,7 @@ async function run() {
     Hospital.deleteMany({}),
     Appointment.deleteMany({}),
     Prescription.deleteMany({}),
+    Invite.deleteMany({}),
   ]);
   log('cleared existing data');
 
@@ -92,12 +94,33 @@ async function run() {
     password: ADMIN_SECRET,
     role: 'admin',
     provider: 'email',
+    status: 'approved',
+    emailVerified: true,
+    approvedAt: new Date(),
   });
 
   // Doctors (with linked users)
   const doctorUsers = await User.create([
-    { name: 'Dr. Aisha Mwangi', email: 'aisha@meditrack.test', password: 'password123', role: 'doctor' },
-    { name: 'Dr. Brian Otieno', email: 'brian@meditrack.test', password: 'password123', role: 'doctor' },
+    {
+      name: 'Dr. Aisha Mwangi',
+      email: 'aisha@meditrack.test',
+      password: 'password123',
+      role: 'doctor',
+      status: 'approved',
+      emailVerified: true,
+      approvedAt: new Date(),
+      approvedBy: admin._id,
+    },
+    {
+      name: 'Dr. Brian Otieno',
+      email: 'brian@meditrack.test',
+      password: 'password123',
+      role: 'doctor',
+      status: 'approved',
+      emailVerified: true,
+      approvedAt: new Date(),
+      approvedBy: admin._id,
+    },
   ]);
   const doctors = await Doctor.create([
     {
@@ -121,8 +144,24 @@ async function run() {
 
   // Patients (with linked users)
   const patientUsers = await User.create([
-    { name: 'Jane Doe', email: 'jane@meditrack.test', password: 'password123', role: 'patient' },
-    { name: 'John Kamau', email: 'john@meditrack.test', password: 'password123', role: 'patient' },
+    {
+      name: 'Jane Doe',
+      email: 'jane@meditrack.test',
+      password: 'password123',
+      role: 'patient',
+      status: 'approved',
+      emailVerified: true,
+      approvedAt: new Date(),
+    },
+    {
+      name: 'John Kamau',
+      email: 'john@meditrack.test',
+      password: 'password123',
+      role: 'patient',
+      status: 'approved',
+      emailVerified: true,
+      approvedAt: new Date(),
+    },
   ]);
   const patients = await Patient.create([
     {

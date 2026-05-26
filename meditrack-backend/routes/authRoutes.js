@@ -15,7 +15,7 @@ const { requireAuth } = require('../middleware/auth');
  * /api/auth/register:
  *   post:
  *     tags: [Auth]
- *     summary: Register a new patient or doctor
+ *     summary: Register a patient, or an invited doctor/hospital
  *     security: []
  *     requestBody:
  *       required: true
@@ -61,7 +61,7 @@ router.post('/login', login);
  * /api/auth/admin-login:
  *   post:
  *     tags: [Auth]
- *     summary: Admin login using the shared admin secret
+ *     summary: Admin login for an existing admin account
  *     security: []
  *     requestBody:
  *       required: true

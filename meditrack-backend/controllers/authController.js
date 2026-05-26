@@ -3,18 +3,20 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Patient = require('../models/Patients');
 const Doctor = require('../models/Doctors');
+const Hospital = require('../models/Hospitals');
 const Invite = require('../models/Invite');
 const { JWT_SECRET } = require('../middleware/auth');
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET || '106276';
 const TOKEN_TTL = process.env.JWT_TTL || '7d';
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
+const INVITE_ROLES = ['doctor', 'hospital'];
+const SELF_REGISTER_ROLES = ['patient', ...INVITE_ROLES];
 
 const signToken = (user) =>
   jwt.sign({ id: String(user._id), role: user.role }, JWT_SECRET, { expiresIn: TOKEN_TTL });
 
-// In a real deployment this would send an email via SMTP / SendGrid / Resend.
-// For now we log the link so admins/devs can copy it from the server console.
+// Wire this to SMTP/SendGrid/Resend in production. For local/dev, expose the
+// link in logs and non-production responses so the flow is testable.
 const sendVerificationEmail = (user, token) => {
   const link = `${APP_URL}/verify-email?token=${token}`;
   // eslint-disable-next-line no-console
@@ -24,15 +26,72 @@ const sendVerificationEmail = (user, token) => {
 
 const generateToken = (bytes = 24) => crypto.randomBytes(bytes).toString('hex');
 
-// Auto-create a profile document linked to the user when they register.
-const ensureProfile = async (user) => {
+const buildVerification = (provider) => {
+  if (provider !== 'email') return { emailVerified: true };
+
+  return {
+    emailVerified: false,
+    verificationToken: generateToken(),
+    verificationExpires: new Date(Date.now() + 1000 * 60 * 60 * 24),
+  };
+};
+
+const ensureProfile = async (user, body = {}) => {
   if (user.role === 'patient') {
     const existing = await Patient.findOne({ userId: user._id });
     if (!existing) await Patient.create({ userId: user._id, fullName: user.name });
-  } else if (user.role === 'doctor') {
-    const existing = await Doctor.findOne({ userId: user._id });
-    if (!existing) await Doctor.create({ userId: user._id, fullName: user.name });
+    return;
   }
+
+  if (user.role === 'doctor') {
+    const existing = await Doctor.findOne({ userId: user._id });
+    if (!existing) {
+      await Doctor.create({
+        userId: user._id,
+        fullName: user.name,
+        specialty: body.specialty,
+        contact: body.contact,
+      });
+    }
+    return;
+  }
+
+  if (user.role === 'hospital') {
+    const existing = await Hospital.findOne({ userId: user._id });
+    if (!existing) {
+      await Hospital.create({
+        userId: user._id,
+        name: body.hospitalName || body.facilityName || user.name,
+        location: body.location,
+        description: body.description,
+        departments: body.departments,
+        contact: body.contact,
+        hours: body.hours,
+      });
+    }
+  }
+};
+
+const findUsableInvite = async ({ role, inviteCode, email }) => {
+  if (!INVITE_ROLES.includes(role)) return null;
+  if (!inviteCode) {
+    const err = new Error(`${role} registration requires an invite code`);
+    err.status = 400;
+    throw err;
+  }
+
+  const invite = await Invite.findOne({ code: String(inviteCode).trim().toUpperCase() });
+  if (!invite || !invite.isUsable() || invite.role !== role) {
+    const err = new Error('Invalid or expired invite code');
+    err.status = 400;
+    throw err;
+  }
+  if (invite.email && invite.email !== email) {
+    const err = new Error('This invite is for a different email address');
+    err.status = 400;
+    throw err;
+  }
+  return invite;
 };
 
 exports.register = async (req, res, next) => {
@@ -45,6 +104,7 @@ exports.register = async (req, res, next) => {
       provider = 'email',
       providerId,
       inviteCode,
+      location,
     } = req.body;
 
     if (!name || !email) {
@@ -53,63 +113,39 @@ exports.register = async (req, res, next) => {
     if (provider === 'email' && !password) {
       return res.status(400).json({ error: 'Password required for email signup' });
     }
-    // Block self-registering as admin via this endpoint.
     if (role === 'admin') {
-      return res.status(403).json({ error: 'Cannot register as admin' });
+      return res.status(403).json({ error: 'Admins must be created by an existing admin' });
     }
-    if (!['patient', 'doctor'].includes(role)) {
+    if (!SELF_REGISTER_ROLES.includes(role)) {
       return res.status(400).json({ error: 'Invalid role' });
     }
+    if (role === 'hospital' && !location) {
+      return res.status(400).json({ error: 'Hospital registration requires a location' });
+    }
 
-    const existing = await User.findOne({ email: email.toLowerCase() });
+    const normalizedEmail = email.toLowerCase().trim();
+    const existing = await User.findOne({ email: normalizedEmail });
     if (existing) return res.status(409).json({ error: 'Email already registered' });
 
-    // Resolve invite (doctor flow). If a valid invite is provided we auto-approve.
-    let invite = null;
-    if (role === 'doctor' && inviteCode) {
-      invite = await Invite.findOne({ code: String(inviteCode).trim().toUpperCase() });
-      if (!invite || !invite.isUsable() || invite.role !== 'doctor') {
-        return res.status(400).json({ error: 'Invalid or expired invite code' });
-      }
-      if (invite.email && invite.email !== email.toLowerCase()) {
-        return res.status(400).json({ error: 'This invite is for a different email address' });
-      }
-    }
-
-    // Determine status:
-    // - patient: auto-approved
-    // - doctor with valid invite: auto-approved
-    // - doctor without invite: pending admin approval
-    const status =
-      role === 'patient' || invite ? 'approved' : 'pending';
-
-    // Verification token (email link). Provider !== 'email' implies trusted OAuth.
-    let verificationToken;
-    let verificationExpires;
-    let emailVerified = false;
-    if (provider === 'email') {
-      verificationToken = generateToken();
-      verificationExpires = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24h
-    } else {
-      emailVerified = true;
-    }
+    const invite = await findUsableInvite({ role, inviteCode, email: normalizedEmail });
+    const status = role === 'patient' ? 'approved' : 'pending';
+    const verification = buildVerification(provider);
 
     const user = new User({
       name,
-      email,
+      email: normalizedEmail,
       password: provider === 'email' ? password : undefined,
       role,
       provider,
       providerId,
       status,
-      emailVerified,
-      verificationToken,
-      verificationExpires,
+      ...verification,
       inviteCode: invite?.code,
       approvedAt: status === 'approved' ? new Date() : undefined,
     });
+
     await user.save();
-    await ensureProfile(user);
+    await ensureProfile(user, req.body);
 
     if (invite) {
       invite.usedBy = user._id;
@@ -117,31 +153,30 @@ exports.register = async (req, res, next) => {
       await invite.save();
     }
 
-    // Log the verification link (until SMTP is wired up).
     let verificationLink;
-    if (verificationToken) {
-      verificationLink = sendVerificationEmail(user, verificationToken);
+    if (user.verificationToken) {
+      verificationLink = sendVerificationEmail(user, user.verificationToken);
     }
 
-    // For doctors awaiting approval, do NOT return a session token.
     if (status === 'pending') {
       return res.status(201).json({
-        message:
-          'Your account has been created and is awaiting admin approval. Please verify your email using the link sent to your inbox.',
+        message: 'Account created and awaiting admin approval. Please verify your email.',
         pending: true,
         ...user.toSafeJSON(),
-        // Exposed only in non-production so devs can copy from the response.
         verificationLink: process.env.NODE_ENV === 'production' ? undefined : verificationLink,
       });
     }
 
-    // Approved (patient or invited doctor) — issue a session immediately.
-    const token = signToken(user);
-    return res.status(201).json({
-      token,
+    const response = {
+      message: user.emailVerified
+        ? 'Account created.'
+        : 'Account created. Please verify your email before signing in.',
       ...user.toSafeJSON(),
       verificationLink: process.env.NODE_ENV === 'production' ? undefined : verificationLink,
-    });
+    };
+
+    if (user.emailVerified) response.token = signToken(user);
+    return res.status(201).json(response);
   } catch (err) {
     next(err);
   }
@@ -176,19 +211,45 @@ exports.resendVerification = async (req, res, next) => {
     const email = String(req.body?.email || '').toLowerCase().trim();
     if (!email) return res.status(400).json({ error: 'Email is required' });
 
-    const user = await User.findOne({ email });
-    // Always respond 200 to avoid leaking which emails exist.
-    if (!user || user.emailVerified) return res.json({ message: 'If the account exists and is unverified, a new link was sent.' });
+    const user = await User.findOne({ email }).select('+verificationToken +verificationExpires');
+    if (!user || user.emailVerified) {
+      return res.json({
+        message: 'If the account exists and is unverified, a new link was sent.',
+      });
+    }
 
     user.verificationToken = generateToken();
     user.verificationExpires = new Date(Date.now() + 1000 * 60 * 60 * 24);
     await user.save();
-    sendVerificationEmail(user, user.verificationToken);
+    const verificationLink = sendVerificationEmail(user, user.verificationToken);
 
-    res.json({ message: 'Verification link sent.' });
+    res.json({
+      message: 'Verification link sent.',
+      verificationLink: process.env.NODE_ENV === 'production' ? undefined : verificationLink,
+    });
   } catch (err) {
     next(err);
   }
+};
+
+const rejectInactive = (user, res) => {
+  if (user.status === 'pending') {
+    res.status(403).json({
+      error: 'Your account is awaiting admin approval.',
+      status: 'pending',
+    });
+    return true;
+  }
+  if (user.status === 'rejected') {
+    res.status(403).json({
+      error: user.rejectionReason
+        ? `Your account was rejected: ${user.rejectionReason}`
+        : 'Your account was rejected.',
+      status: 'rejected',
+    });
+    return true;
+  }
+  return false;
 };
 
 exports.login = async (req, res, next) => {
@@ -196,7 +257,9 @@ exports.login = async (req, res, next) => {
     const { email, password, provider = 'email' } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required' });
 
-    const user = await User.findOne({ email: email.toLowerCase(), provider }).select('+password');
+    const user = await User.findOne({ email: email.toLowerCase().trim(), provider }).select(
+      '+password',
+    );
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
     if (provider === 'email') {
@@ -205,45 +268,16 @@ exports.login = async (req, res, next) => {
       if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Gate by approval status.
-    if (user.status === 'pending') {
-      return res.status(403).json({
-        error:
-          'Your account is awaiting admin approval. You will be notified once approved.',
-        status: 'pending',
-      });
-    }
-    if (user.status === 'rejected') {
-      return res.status(403).json({
-        error:
-          user.rejectionReason
-            ? `Your account was rejected: ${user.rejectionReason}`
-            : 'Your account was rejected.',
-        status: 'rejected',
-      });
-    }
-
-    // Gate by email verification (skip for admins so they can always recover access).
+    if (rejectInactive(user, res)) return undefined;
     if (user.role !== 'admin' && !user.emailVerified) {
       return res.status(403).json({
-        error:
-          'Please verify your email address before signing in. Check your inbox for the verification link.',
+        error: 'Please verify your email address before signing in.',
         emailVerified: false,
       });
     }
-  status: 'approved',
-        emailVerified: true,
-        approvedAt: new Date(),
-      });
-      await user.save();
-    } else if (user.role !== 'admin') {
-      return res.status(403).json({ error: 'Account is not an admin' });
-    } else if (user.status !== 'approved' || !user.emailVerified) {
-      // Heal pre-existing admin accounts so the bootstrap login still works.
-      user.status = 'approved';
-      user.emailVerified = true;
-      if (!user.approvedAt) user.approvedAt = new Date();
-      await user.save(
+
+    const token = signToken(user);
+    return res.json({ token, ...user.toSafeJSON() });
   } catch (err) {
     next(err);
   }
@@ -255,26 +289,24 @@ exports.adminLogin = async (req, res, next) => {
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
-    if (password !== ADMIN_SECRET) {
-      return res.status(401).json({ error: 'Invalid admin password' });
-    }
 
-    let user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      user = new User({
-        name: 'Admin',
-        email,
-        password: ADMIN_SECRET,
-        role: 'admin',
-        provider: 'email',
-      });
-      await user.save();
-    } else if (user.role !== 'admin') {
-      return res.status(403).json({ error: 'Account is not an admin' });
-    }
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+      role: 'admin',
+      provider: 'email',
+    }).select('+password');
+    if (!user) return res.status(401).json({ error: 'Invalid admin credentials' });
+
+    const ok = await user.comparePassword(password);
+    if (!ok) return res.status(401).json({ error: 'Invalid admin credentials' });
+
+    user.status = 'approved';
+    user.emailVerified = true;
+    if (!user.approvedAt) user.approvedAt = new Date();
+    await user.save();
 
     const token = signToken(user);
-    res.json({ token, ...user.toSafeJSON() });
+    return res.json({ token, ...user.toSafeJSON() });
   } catch (err) {
     next(err);
   }
