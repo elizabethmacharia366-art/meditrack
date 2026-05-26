@@ -52,6 +52,8 @@ export const AuthProvider = ({ children }) => {
 
   // Calls the backend; if "role" is "admin", uses /auth/admin-login.
   const login = async ({ email, password, role }) => {
+    setUser(null);
+    persist(null, null);
     const fn = role === "admin" ? apiAdminLogin : apiLogin;
     const { data } = await fn({ email, password, role });
     const nextUser = { id: data.id, name: data.name, email: data.email, role: data.role };
@@ -68,6 +70,8 @@ export const AuthProvider = ({ children }) => {
     location,
     hospitalName,
   }) => {
+    setUser(null);
+    persist(null, null);
     const { data } = await apiRegister({
       name,
       email,

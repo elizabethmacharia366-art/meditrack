@@ -1,14 +1,12 @@
 import React, { useContext, useState } from "react";
-import { AuthContext } from "../../context/authcontext";
 import { useNavigate } from "react-router-dom";
-import { resendVerification } from "../../service/api";
+import { AuthContext } from "../../context/authcontext";
 
 export default function Login() {
   const { login } = useContext(AuthContext);
   const [formData, setFormData] = useState({ email: "", password: "", role: "" });
   const [error, setError] = useState("");
-  const [errorKind, setErrorKind] = useState(""); // 'pending' | 'unverified' | ''
-  const [resendStatus, setResendStatus] = useState("");
+  const [errorKind, setErrorKind] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -20,7 +18,6 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setErrorKind("");
-    setResendStatus("");
     if (!formData.email || !formData.password || !formData.role) {
       setError("Email, password and role are required.");
       return;
@@ -34,18 +31,7 @@ export default function Login() {
       const data = err.response?.data;
       setError(data?.error || "Login failed");
       if (data?.status === "pending") setErrorKind("pending");
-      else if (data?.emailVerified === false) setErrorKind("unverified");
       setSubmitting(false);
-    }
-  };
-
-  const handleResend = async () => {
-    setResendStatus("Sending…");
-    try {
-      const { data } = await resendVerification(formData.email);
-      setResendStatus(data?.message || "If the account exists, a link was sent.");
-    } catch {
-      setResendStatus("Could not send right now. Try again later.");
     }
   };
 
@@ -100,26 +86,10 @@ export default function Login() {
                 "text-sm rounded p-3 border " +
                 (errorKind === "pending"
                   ? "bg-yellow-50 border-yellow-200 text-yellow-800"
-                  : errorKind === "unverified"
-                  ? "bg-blue-50 border-blue-200 text-blue-800"
                   : "bg-red-50 border-red-200 text-red-600")
               }
             >
-              <div>{error}</div>
-              {errorKind === "unverified" && (
-                <div className="mt-2">
-                  <button
-                    type="button"
-                    onClick={handleResend}
-                    className="underline text-blue-700 text-xs"
-                  >
-                    Resend verification email
-                  </button>
-                  {resendStatus && (
-                    <div className="text-xs text-gray-700 mt-1">{resendStatus}</div>
-                  )}
-                </div>
-              )}
+              {error}
             </div>
           )}
 
