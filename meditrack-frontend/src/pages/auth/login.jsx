@@ -1,14 +1,26 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/authcontext";
 
+const ROLE_PATHS = {
+  admin: "/admin",
+  doctor: "/doctor",
+  patient: "/patient",
+};
+
 export default function Login() {
-  const { login } = useContext(AuthContext);
+  const { login, logout } = useContext(AuthContext);
   const [formData, setFormData] = useState({ email: "", password: "", role: "" });
   const [error, setError] = useState("");
   const [errorKind, setErrorKind] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    logout();
+    // Clear any previous role session before a new login attempt.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -26,7 +38,7 @@ export default function Login() {
       setSubmitting(true);
       const u = await login(formData);
       sessionStorage.setItem("greet", "back");
-      navigate(`/${u.role}`);
+      navigate(ROLE_PATHS[u.role] || "/login", { replace: true });
     } catch (err) {
       const data = err.response?.data;
       setError(data?.error || "Login failed");

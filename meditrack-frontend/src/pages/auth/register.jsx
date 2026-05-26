@@ -1,9 +1,15 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../context/authcontext";
 import { useNavigate } from "react-router-dom";
 
+const ROLE_PATHS = {
+  admin: "/admin",
+  doctor: "/doctor",
+  patient: "/patient",
+};
+
 export default function Register() {
-  const { register } = useContext(AuthContext);
+  const { register, logout } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -12,9 +18,15 @@ export default function Register() {
     location: "",
   });
   const [error, setError] = useState("");
-  const [info, setInfo] = useState(null); // { message, verificationLink }
+  const [info, setInfo] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    logout();
+    // Clear any previous role session before a new registration attempt.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -40,23 +52,12 @@ export default function Register() {
           message:
             u.message ||
             "Your account has been created and is awaiting admin approval.",
-          verificationLink: u.verificationLink,
-        });
-        setSubmitting(false);
-        return;
-      }
-      // Unverified accounts do not receive a session yet.
-      if (u?.verificationLink) {
-        setInfo({
-          message:
-            "Account created. Please verify your email, then sign in.",
-          verificationLink: u.verificationLink,
         });
         setSubmitting(false);
         return;
       }
       sessionStorage.setItem("greet", "new");
-      navigate(`/${u.role}`);
+      navigate(ROLE_PATHS[u.role] || "/login", { replace: true });
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed");
       setSubmitting(false);
@@ -149,19 +150,6 @@ export default function Register() {
           {info && (
             <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded p-3 text-sm space-y-2">
               <div className="font-medium">{info.message}</div>
-              {info.verificationLink && (
-                <div>
-                  <div className="text-xs text-blue-700 mb-1">
-                    Email verification link (also logged on the server):
-                  </div>
-                  <a
-                    href={info.verificationLink}
-                    className="underline text-blue-700 break-all text-xs"
-                  >
-                    {info.verificationLink}
-                  </a>
-                </div>
-              )}
             </div>
           )}
 
