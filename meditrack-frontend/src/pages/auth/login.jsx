@@ -41,7 +41,7 @@ export default function Login() {
       navigate(getRoleHomePath(u.role), { replace: true });
     } catch (err) {
       const data = err.response?.data;
-      setError(data?.error || "Login failed");
+      setError(data?.error || err.message || "Login failed");
       if (data?.status === "pending") setErrorKind("pending");
       setSubmitting(false);
     }

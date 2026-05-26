@@ -1,11 +1,11 @@
 import React, { useContext } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/authcontext";
 import { RoleContext } from "../context/rolecontext";
-import { getRoleHomePath } from "../utils/roleRoutes";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useContext(AuthContext);
+  const location = useLocation();
 
   const { role } = useContext(RoleContext);
 
@@ -22,7 +22,17 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   }
 
   if (!allowedRoles.includes(role)) {
-    return <Navigate to={getRoleHomePath(role)} replace />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{
+          info: "Please sign in with the correct account role.",
+          role: allowedRoles.length === 1 ? allowedRoles[0] : "",
+          from: location.pathname,
+        }}
+      />
+    );
   }
 
   return children;

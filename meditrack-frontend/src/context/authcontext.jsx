@@ -56,6 +56,10 @@ export const AuthProvider = ({ children }) => {
     persist(null, null);
     const fn = role === "admin" ? apiAdminLogin : apiLogin;
     const { data } = await fn({ email, password, role });
+    if (role && data.role !== role) {
+      persist(null, null);
+      throw new Error(`This account is registered as ${data.role}.`);
+    }
     const nextUser = { id: data.id, name: data.name, email: data.email, role: data.role };
     setUser(nextUser);
     persist(nextUser, data.token);

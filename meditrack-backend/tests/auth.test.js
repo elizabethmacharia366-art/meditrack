@@ -201,6 +201,29 @@ describe('Auth', () => {
     expect(login.body.token).toEqual(expect.any(String));
   });
 
+  test('approved patients cannot access admin user management', async () => {
+    const reg = await request(app).post('/api/auth/register').send({
+      name: 'Patient Only',
+      email: 'patient-only@example.com',
+      password: 'password123',
+      role: 'patient',
+    });
+    await approveUser(reg.body.id);
+
+    const login = await request(app).post('/api/auth/login').send({
+      email: 'patient-only@example.com',
+      password: 'password123',
+      role: 'patient',
+    });
+    expect(login.status).toBe(200);
+    expect(login.body.role).toBe('patient');
+
+    const adminUsers = await request(app)
+      .get('/api/admin/users')
+      .set(auth(login.body.token));
+    expect(adminUsers.status).toBe(403);
+  });
+
   test('POST /api/auth/login rejects selected role mismatch', async () => {
     const reg = await request(app).post('/api/auth/register').send({
       name: 'Role Check', email: 'rolecheck@example.com', password: 'password123', role: 'patient',
