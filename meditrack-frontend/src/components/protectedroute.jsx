@@ -4,12 +4,17 @@ import { AuthContext } from "../context/authcontext";
 import { RoleContext } from "../context/rolecontext";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
 
   const { role } = useContext(RoleContext);
 
-  console.log("AuthContext user:", user);
-  console.log("RoleContext role:", role);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Loading...
+      </div>
+    );
+  }
 
   if (!user) {
     return <Navigate to="/login" replace />;

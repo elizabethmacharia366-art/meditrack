@@ -4,6 +4,7 @@ import {
   login as apiLogin,
   register as apiRegister,
   adminLogin as apiAdminLogin,
+  me as apiMe,
   setAuthToken,
 } from "../service/api";
 
@@ -20,11 +21,33 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
     const storedToken = localStorage.getItem("token");
-    if (storedUser) setUser(JSON.parse(storedUser));
-    if (storedToken) setAuthToken(storedToken);
-    setLoading(false);
+    if (!storedToken) {
+      setLoading(false);
+      return;
+    }
+
+    let alive = true;
+    setAuthToken(storedToken);
+    apiMe()
+      .then(({ data }) => {
+        if (!alive) return;
+        const nextUser = { id: data.id, name: data.name, email: data.email, role: data.role };
+        setUser(nextUser);
+        localStorage.setItem("user", JSON.stringify(nextUser));
+      })
+      .catch(() => {
+        if (!alive) return;
+        setUser(null);
+        persist(null, null);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // Calls the backend; if "role" is "admin", uses /auth/admin-login.
