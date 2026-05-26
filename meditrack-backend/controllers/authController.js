@@ -34,10 +34,7 @@ const buildVerification = (provider) => {
   };
 };
 
-const buildRegistrationVerification = (role, provider) => {
-  if (role === 'patient') return { emailVerified: true };
-  return buildVerification(provider);
-};
+const buildRegistrationVerification = () => ({ emailVerified: true });
 
 const ensureProfile = async (user, body = {}) => {
   if (user.role === 'patient') {
@@ -124,8 +121,8 @@ exports.register = async (req, res, next) => {
     const existing = await User.findOne({ email: normalizedEmail });
     if (existing) return res.status(409).json({ error: 'Email already registered' });
 
-    const status = role === 'patient' ? 'approved' : 'pending';
-    const verification = buildRegistrationVerification(role, provider);
+    const status = 'pending';
+    const verification = buildRegistrationVerification();
 
     const user = new User({
       name,
@@ -142,30 +139,11 @@ exports.register = async (req, res, next) => {
     await user.save();
     await ensureProfile(user, req.body);
 
-    let verificationLink;
-    if (user.verificationToken) {
-      verificationLink = sendVerificationEmail(user, user.verificationToken);
-    }
-
-    if (status === 'pending') {
-      return res.status(201).json({
-        message: 'Account created and awaiting admin approval. Please verify your email.',
-        pending: true,
-        ...user.toSafeJSON(),
-        verificationLink: process.env.NODE_ENV === 'production' ? undefined : verificationLink,
-      });
-    }
-
-    const response = {
-      message: user.emailVerified
-        ? 'Account created.'
-        : 'Account created. Please verify your email before signing in.',
+    return res.status(201).json({
+      message: 'Account created and awaiting admin approval.',
+      pending: true,
       ...user.toSafeJSON(),
-      verificationLink: process.env.NODE_ENV === 'production' ? undefined : verificationLink,
-    };
-
-    if (user.emailVerified) response.token = signToken(user);
-    return res.status(201).json(response);
+    });
   } catch (err) {
     next(err);
   }
@@ -261,12 +239,6 @@ exports.login = async (req, res, next) => {
     }
 
     if (rejectInactive(user, res)) return undefined;
-    if (user.role !== 'admin' && !user.emailVerified) {
-      return res.status(403).json({
-        error: 'Please verify your email address before signing in.',
-        emailVerified: false,
-      });
-    }
 
     const token = signToken(user);
     return res.json({ token, ...user.toSafeJSON() });
@@ -338,11 +310,9 @@ exports.updateMe = async (req, res, next) => {
       if (existing) return res.status(409).json({ error: 'Email already registered' });
 
       user.email = updates.email;
-      if (user.role !== 'admin') {
-        user.emailVerified = false;
-        user.verificationToken = generateToken();
-        user.verificationExpires = new Date(Date.now() + 1000 * 60 * 60 * 24);
-      }
+      user.emailVerified = true;
+      user.verificationToken = undefined;
+      user.verificationExpires = undefined;
     }
 
     if (updates.name) user.name = updates.name;

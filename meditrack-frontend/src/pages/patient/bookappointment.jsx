@@ -8,6 +8,7 @@ import {
   getHospitals,
   getMyPatient,
   updateAppointment,
+  updateMyPatient,
 } from "../../service/api";
 
 const fmt = (value) => {
@@ -21,6 +22,7 @@ const emptyForm = {
   hospitalId: "",
   date: "",
   time: "",
+  contact: "",
   issue: "",
   autoAssign: true,
 };
@@ -49,6 +51,7 @@ export default function BookAppointment() {
       setDoctors(Array.isArray(dRes.data) ? dRes.data : []);
       setHospitals(Array.isArray(hRes.data) ? hRes.data : []);
       setPatientId(meRes.data?._id || null);
+      setForm((current) => ({ ...current, contact: meRes.data?.contact || current.contact }));
       setAppointments(Array.isArray(aRes.data) ? aRes.data : []);
       setError("");
     } catch (err) {
@@ -83,6 +86,10 @@ export default function BookAppointment() {
       setError("Date and time are required.");
       return;
     }
+    if (!form.contact.trim()) {
+      setError("Contact is required.");
+      return;
+    }
     if (form.autoAssign && !form.hospitalId) {
       setError("Pick a hospital so we can auto-assign a doctor.");
       return;
@@ -112,6 +119,7 @@ export default function BookAppointment() {
 
     try {
       setSaving(true);
+      await updateMyPatient(patientId, { contact: form.contact.trim() });
       const { data } = await createAppointment(payload);
       const doctorName = data?.doctorId?.fullName || "your doctor";
       const specialty = data?.matchedSpecialty || data?.doctorId?.specialty;
@@ -120,7 +128,7 @@ export default function BookAppointment() {
           ? `You've been assigned to ${doctorName}${specialty ? ` (${specialty})` : ""}.`
           : "Appointment booked successfully.",
       );
-      setForm(emptyForm);
+      setForm({ ...emptyForm, contact: form.contact.trim() });
       await load();
     } catch (err) {
       setError(err.response?.data?.error || "Failed to book appointment");
@@ -224,6 +232,18 @@ export default function BookAppointment() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block mb-1 text-sm font-medium text-gray-700">Contact</label>
+          <input
+            type="text"
+            value={form.contact}
+            onChange={(e) => setForm({ ...form, contact: e.target.value })}
+            className="border rounded-lg w-full px-3 py-2"
+            placeholder="Phone or email"
+            required
+          />
         </div>
 
         <div>

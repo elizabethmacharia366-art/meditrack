@@ -120,9 +120,9 @@ export default function Register() {
             </select>
           </div>
 
-          {["doctor", "hospital"].includes(formData.role) && (
+          {formData.role && (
             <div className="bg-yellow-50 border border-yellow-200 text-yellow-900 rounded p-3 text-sm">
-              Doctor and hospital accounts are reviewed by an admin before access is enabled.
+              Accounts are reviewed by an admin before access is enabled.
             </div>
           )}
 

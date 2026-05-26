@@ -9,8 +9,15 @@ beforeAll(async () => {
 afterAll(stopDB);
 beforeEach(clearDB);
 
+const approveUser = async (userId) => {
+  const admin = await adminLogin(app);
+  return request(app)
+    .post(`/api/admin/users/${userId}/approve`)
+    .set(auth(admin.token));
+};
+
 describe('Auth', () => {
-  test('POST /api/auth/register creates an approved patient that can sign in immediately', async () => {
+  test('POST /api/auth/register creates a pending patient for admin approval', async () => {
     const res = await request(app).post('/api/auth/register').send({
       name: 'Jane',
       email: 'jane@example.com',
@@ -18,9 +25,10 @@ describe('Auth', () => {
       role: 'patient',
     });
     expect(res.status).toBe(201);
-    expect(res.body.token).toEqual(expect.any(String));
+    expect(res.body.token).toBeUndefined();
+    expect(res.body.pending).toBe(true);
     expect(res.body.role).toBe('patient');
-    expect(res.body.status).toBe('approved');
+    expect(res.body.status).toBe('pending');
     expect(res.body.emailVerified).toBe(true);
     expect(res.body.verificationLink).toBeUndefined();
     expect(res.body.email).toBe('jane@example.com');
@@ -132,11 +140,20 @@ describe('Auth', () => {
     expect(res.status).toBe(409);
   });
 
-  test('POST /api/auth/login succeeds for patient without email verification', async () => {
-    await request(app).post('/api/auth/register').send({
+  test('POST /api/auth/login succeeds for patient after admin approval', async () => {
+    const reg = await request(app).post('/api/auth/register').send({
       name: 'Lo', email: 'lo@example.com', password: 'password123',
     });
-    const res = await request(app).post('/api/auth/login').send({
+    let res = await request(app).post('/api/auth/login').send({
+      email: 'lo@example.com', password: 'password123',
+    });
+    expect(res.status).toBe(403);
+    expect(res.body.status).toBe('pending');
+
+    const approval = await approveUser(reg.body.id);
+    expect(approval.status).toBe(200);
+
+    res = await request(app).post('/api/auth/login').send({
       email: 'lo@example.com', password: 'password123',
     });
     expect(res.status).toBe(200);
@@ -144,9 +161,10 @@ describe('Auth', () => {
   });
 
   test('POST /api/auth/login rejects selected role mismatch', async () => {
-    await request(app).post('/api/auth/register').send({
+    const reg = await request(app).post('/api/auth/register').send({
       name: 'Role Check', email: 'rolecheck@example.com', password: 'password123', role: 'patient',
     });
+    await approveUser(reg.body.id);
 
     const res = await request(app).post('/api/auth/login').send({
       email: 'rolecheck@example.com',
@@ -157,9 +175,10 @@ describe('Auth', () => {
   });
 
   test('POST /api/auth/login fails with wrong password', async () => {
-    await request(app).post('/api/auth/register').send({
+    const reg = await request(app).post('/api/auth/register').send({
       name: 'Lo', email: 'lo@example.com', password: 'password123',
     });
+    await approveUser(reg.body.id);
     const res = await request(app).post('/api/auth/login').send({
       email: 'lo@example.com', password: 'wrong',
     });
@@ -196,9 +215,10 @@ describe('Auth', () => {
   });
 
   test('GET /api/auth/me returns the current user with a valid token', async () => {
-    await request(app).post('/api/auth/register').send({
+    const reg = await request(app).post('/api/auth/register').send({
       name: 'Me', email: 'me@example.com', password: 'password123',
     });
+    await approveUser(reg.body.id);
     const login = await request(app).post('/api/auth/login').send({
       email: 'me@example.com', password: 'password123',
     });
@@ -208,9 +228,10 @@ describe('Auth', () => {
   });
 
   test('PUT /api/auth/me updates current user profile', async () => {
-    await request(app).post('/api/auth/register').send({
+    const reg = await request(app).post('/api/auth/register').send({
       name: 'Old Name', email: 'oldname@example.com', password: 'password123',
     });
+    await approveUser(reg.body.id);
     const login = await request(app).post('/api/auth/login').send({
       email: 'oldname@example.com', password: 'password123',
     });
