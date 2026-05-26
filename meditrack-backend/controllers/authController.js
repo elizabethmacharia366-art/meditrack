@@ -155,29 +155,9 @@ exports.register = async (req, res, next) => {
 
 exports.verifyEmail = async (req, res, next) => {
   try {
-    const token = req.query.token || req.body.token;
-    if (!token) return res.status(400).json({ error: 'Verification token is required' });
-
-    const user = await User.findOne({ verificationToken: token }).select(
-      '+verificationToken +verificationExpires',
-    );
-    if (!user) return res.status(400).json({ error: 'Invalid or expired verification link' });
-    if (user.verificationExpires && user.verificationExpires < new Date()) {
-      return res.status(400).json({ error: 'Verification link has expired' });
-    }
-    if (user.status !== 'approved') {
-      return res.status(403).json({
-        error: 'Your account is awaiting admin approval.',
-        status: user.status,
-      });
-    }
-
-    user.emailVerified = true;
-    user.verificationToken = undefined;
-    user.verificationExpires = undefined;
-    await user.save();
-
-    res.json({ message: 'Email verified', ...user.toSafeJSON() });
+    res.status(403).json({
+      error: 'Accounts are activated by admin approval.',
+    });
   } catch (err) {
     next(err);
   }
@@ -185,30 +165,8 @@ exports.verifyEmail = async (req, res, next) => {
 
 exports.resendVerification = async (req, res, next) => {
   try {
-    const email = String(req.body?.email || '').toLowerCase().trim();
-    if (!email) return res.status(400).json({ error: 'Email is required' });
-
-    const user = await User.findOne({ email }).select('+verificationToken +verificationExpires');
-    if (!user || user.emailVerified) {
-      return res.json({
-        message: 'If the account exists and is unverified, a new link was sent.',
-      });
-    }
-    if (user.status !== 'approved') {
-      return res.status(403).json({
-        error: 'Your account is awaiting admin approval.',
-        status: user.status,
-      });
-    }
-
-    user.verificationToken = generateToken();
-    user.verificationExpires = new Date(Date.now() + 1000 * 60 * 60 * 24);
-    await user.save();
-    const verificationLink = sendVerificationEmail(user, user.verificationToken);
-
-    res.json({
-      message: 'Verification link sent.',
-      verificationLink: process.env.NODE_ENV === 'production' ? undefined : verificationLink,
+    res.status(403).json({
+      error: 'Accounts are activated by admin approval.',
     });
   } catch (err) {
     next(err);
@@ -338,7 +296,7 @@ exports.updateMe = async (req, res, next) => {
       if (existing) return res.status(409).json({ error: 'Email already registered' });
 
       user.email = updates.email;
-      user.emailVerified = true;
+      user.emailVerified = user.status === 'approved';
       user.verificationToken = undefined;
       user.verificationExpires = undefined;
     }
@@ -348,17 +306,9 @@ exports.updateMe = async (req, res, next) => {
     await user.save();
     if (updates.name) await syncProfileName(user);
 
-    let verificationLink;
-    if (user.verificationToken) {
-      verificationLink = sendVerificationEmail(user, user.verificationToken);
-    }
-
     res.json({
-      message: verificationLink
-        ? 'Profile updated. Please verify your new email before signing in again.'
-        : 'Profile updated.',
+      message: 'Profile updated.',
       ...user.toSafeJSON(),
-      verificationLink: process.env.NODE_ENV === 'production' ? undefined : verificationLink,
     });
   } catch (err) {
     next(err);
