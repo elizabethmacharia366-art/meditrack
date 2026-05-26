@@ -21,6 +21,9 @@ exports.approveUser = async (req, res, next) => {
       return res.status(400).json({ error: 'Admins do not need approval' });
     }
     user.status = 'approved';
+    user.emailVerified = true;
+    user.verificationToken = undefined;
+    user.verificationExpires = undefined;
     user.rejectionReason = undefined;
     user.approvedAt = new Date();
     user.approvedBy = req.user.id;

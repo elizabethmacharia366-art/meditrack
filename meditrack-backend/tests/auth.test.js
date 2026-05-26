@@ -36,7 +36,7 @@ describe('Auth', () => {
     expect(res.status).toBe(403);
   });
 
-  test('doctor registers pending, verifies email, waits for admin approval, then can login', async () => {
+  test('doctor registers pending, waits for admin approval, then can login without email verification', async () => {
     const admin = await adminLogin(app);
     const reg = await request(app).post('/api/auth/register').send({
       name: 'Dr. Pending',
@@ -58,22 +58,12 @@ describe('Auth', () => {
     expect(login.status).toBe(403);
     expect(login.body.status).toBe('pending');
 
-    const token = new URL(reg.body.verificationLink).searchParams.get('token');
-    const verify = await request(app).post('/api/auth/verify-email').send({ token });
-    expect(verify.status).toBe(200);
-
-    login = await request(app).post('/api/auth/login').send({
-      email: 'doctor@example.com',
-      password: 'password123',
-    });
-    expect(login.status).toBe(403);
-    expect(login.body.status).toBe('pending');
-
     const approval = await request(app)
       .post(`/api/admin/users/${reg.body.id}/approve`)
       .set(auth(admin.token));
     expect(approval.status).toBe(200);
     expect(approval.body.status).toBe('approved');
+    expect(approval.body.emailVerified).toBe(true);
 
     login = await request(app).post('/api/auth/login').send({
       email: 'doctor@example.com',
