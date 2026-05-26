@@ -1,93 +1,103 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  adminListInvites,
   adminCreateInvite,
+  adminListInvites,
   adminRevokeInvite,
 } from "../../service/api";
 
-const fmt = (d) => {
-  if (!d) return "—";
-  const dt = new Date(d);
-  return Number.isNaN(dt.getTime()) ? "—" : dt.toLocaleString();
+const fmt = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString();
+};
+
+const inviteStatus = (invite) => {
+  if (invite.used || invite.usedBy) return "Used";
+  if (invite.expiresAt && new Date(invite.expiresAt) < new Date()) return "Expired";
+  return "Active";
 };
 
 export default function AdminInvites() {
   const [invites, setInvites] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [form, setForm] = useState({ email: "", note: "", expiresInDays: 14 });
   const [creating, setCreating] = useState(false);
   const [copied, setCopied] = useState("");
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({
+    role: "doctor",
+    email: "",
+    expiresInDays: 14,
+    note: "",
+  });
 
-  const load = async () => {
+  const loadInvites = async () => {
     try {
       setLoading(true);
       const { data } = await adminListInvites();
       setInvites(Array.isArray(data) ? data : []);
       setError("");
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to load invites");
+      setError(err.response?.data?.error || "Failed to load invite codes");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
+    loadInvites();
   }, []);
 
-  const create = async (e) => {
+  const createInvite = async (e) => {
     e.preventDefault();
     try {
       setCreating(true);
       await adminCreateInvite({
-        role: "doctor",
+        role: form.role,
         email: form.email.trim() || undefined,
-        note: form.note.trim() || undefined,
         expiresInDays: Number(form.expiresInDays) || undefined,
+        note: form.note.trim() || undefined,
       });
-      setForm({ email: "", note: "", expiresInDays: 14 });
-      await load();
+      setForm({ role: form.role, email: "", expiresInDays: 14, note: "" });
+      await loadInvites();
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to create invite");
+      setError(err.response?.data?.error || "Failed to create invite code");
     } finally {
       setCreating(false);
     }
   };
 
-  const revoke = async (id) => {
-    if (!window.confirm("Revoke this invite?")) return;
-    try {
-      await adminRevokeInvite(id);
-      await load();
-    } catch (err) {
-      setError(err.response?.data?.error || "Failed to revoke invite");
-    }
-  };
-
-  const copy = async (code) => {
+  const copyCode = async (code) => {
     try {
       await navigator.clipboard.writeText(code);
       setCopied(code);
       setTimeout(() => setCopied(""), 1500);
     } catch {
-      /* ignore */
+      setError("Could not copy code. Select it manually.");
+    }
+  };
+
+  const revokeInvite = async (id) => {
+    if (!window.confirm("Revoke this invite code?")) return;
+    try {
+      await adminRevokeInvite(id);
+      await loadInvites();
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to revoke invite code");
     }
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
         <div>
-          <h1 className="text-2xl font-bold">Doctor Invites</h1>
+          <h1 className="text-2xl font-bold">Invite Codes</h1>
           <p className="text-gray-600 text-sm">
-            Generate invite codes to onboard doctors. Doctors who register with a valid invite are
-            approved automatically.
+            Generate one-time codes for doctor and hospital registration.
           </p>
         </div>
         <Link to="/admin" className="text-blue-600 hover:underline text-sm">
-          ← Back to dashboard
+          Back to dashboard
         </Link>
       </div>
 
@@ -98,23 +108,36 @@ export default function AdminInvites() {
       )}
 
       <form
-        onSubmit={create}
-        className="bg-white shadow rounded-lg p-5 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3"
+        onSubmit={createInvite}
+        className="bg-white shadow rounded-lg p-5 mb-6 grid grid-cols-1 md:grid-cols-6 gap-3"
       >
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+          <select
+            value={form.role}
+            onChange={(e) => setForm({ ...form, role: e.target.value })}
+            className="border rounded-lg w-full px-3 py-2"
+          >
+            <option value="doctor">Doctor</option>
+            <option value="hospital">Hospital</option>
+          </select>
+        </div>
+
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Email (optional)
+            Recipient email
           </label>
           <input
             type="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             className="border rounded-lg w-full px-3 py-2"
-            placeholder="Restrict to a specific doctor's email"
+            placeholder="Optional email restriction"
           />
         </div>
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Expires (days)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Expires</label>
           <input
             type="number"
             min="1"
@@ -123,32 +146,34 @@ export default function AdminInvites() {
             className="border rounded-lg w-full px-3 py-2"
           />
         </div>
-        <div className="md:col-span-4">
+
+        <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Note</label>
           <input
             type="text"
             value={form.note}
             onChange={(e) => setForm({ ...form, note: e.target.value })}
             className="border rounded-lg w-full px-3 py-2"
-            placeholder="e.g. Cardiology consultant onboarding"
+            placeholder="Credential review note"
           />
         </div>
-        <div className="md:col-span-4">
+
+        <div className="md:col-span-6">
           <button
             type="submit"
             disabled={creating}
             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold px-5 py-2 rounded-lg"
           >
-            {creating ? "Generating…" : "Generate invite code"}
+            {creating ? "Generating..." : "Generate invite code"}
           </button>
         </div>
       </form>
 
       {loading ? (
-        <p className="text-gray-500">Loading…</p>
+        <p className="text-gray-500">Loading...</p>
       ) : invites.length === 0 ? (
         <div className="bg-white shadow rounded-lg p-6 text-center text-gray-600">
-          No invites yet.
+          No invite codes yet.
         </div>
       ) : (
         <div className="overflow-x-auto bg-white shadow rounded-lg">
@@ -156,8 +181,8 @@ export default function AdminInvites() {
             <thead>
               <tr className="bg-gray-50 text-left">
                 <th className="p-3">Code</th>
-                <th className="p-3">For email</th>
-                <th className="p-3">Created</th>
+                <th className="p-3">Role</th>
+                <th className="p-3">Email</th>
                 <th className="p-3">Expires</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Used by</th>
@@ -165,47 +190,47 @@ export default function AdminInvites() {
               </tr>
             </thead>
             <tbody>
-              {invites.map((inv) => {
-                const used = !!inv.usedBy;
-                const expired =
-                  inv.expiresAt && new Date(inv.expiresAt) < new Date();
+              {invites.map((invite) => {
+                const status = inviteStatus(invite);
                 return (
-                  <tr key={inv._id} className="border-t">
-                    <td className="p-3 font-mono">
+                  <tr key={invite._id} className="border-t">
+                    <td className="p-3">
+                      <div className="font-mono font-semibold">{invite.code}</div>
+                      {invite.note && (
+                        <div className="text-xs text-gray-500 mt-0.5">{invite.note}</div>
+                      )}
+                    </td>
+                    <td className="p-3 capitalize">{invite.role}</td>
+                    <td className="p-3">{invite.email || "-"}</td>
+                    <td className="p-3 text-gray-500">{fmt(invite.expiresAt)}</td>
+                    <td className="p-3">
+                      <span
+                        className={
+                          status === "Active"
+                            ? "text-green-700"
+                            : status === "Expired"
+                            ? "text-red-700"
+                            : "text-gray-600"
+                        }
+                      >
+                        {status}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      {invite.usedBy ? `${invite.usedBy.name} (${invite.usedBy.email})` : "-"}
+                    </td>
+                    <td className="p-3 whitespace-nowrap">
                       <button
                         type="button"
-                        onClick={() => copy(inv.code)}
-                        className="hover:underline"
-                        title="Copy"
+                        onClick={() => copyCode(invite.code)}
+                        className="text-blue-700 hover:underline mr-4"
                       >
-                        {inv.code}
+                        {copied === invite.code ? "Copied" : "Copy"}
                       </button>
-                      {copied === inv.code && (
-                        <span className="ml-2 text-green-700 text-xs">copied</span>
-                      )}
-                      {inv.note && (
-                        <div className="text-xs text-gray-500 mt-0.5">{inv.note}</div>
-                      )}
-                    </td>
-                    <td className="p-3">{inv.email || "—"}</td>
-                    <td className="p-3 text-gray-500">{fmt(inv.createdAt)}</td>
-                    <td className="p-3 text-gray-500">{inv.expiresAt ? fmt(inv.expiresAt) : "—"}</td>
-                    <td className="p-3">
-                      {used ? (
-                        <span className="text-gray-600 text-xs">Used</span>
-                      ) : expired ? (
-                        <span className="text-red-700 text-xs">Expired</span>
-                      ) : (
-                        <span className="text-green-700 text-xs">Active</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      {inv.usedBy ? `${inv.usedBy.name} (${inv.usedBy.email})` : "—"}
-                    </td>
-                    <td className="p-3">
-                      {!used && (
+                      {status === "Active" && (
                         <button
-                          onClick={() => revoke(inv._id)}
+                          type="button"
+                          onClick={() => revokeInvite(invite._id)}
                           className="text-red-700 hover:underline"
                         >
                           Revoke

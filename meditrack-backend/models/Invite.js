@@ -7,6 +7,7 @@ const inviteSchema = new mongoose.Schema(
     email: { type: String, lowercase: true, trim: true },
     note: { type: String, trim: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    used: { type: Boolean, default: false },
     usedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     usedAt: { type: Date },
     expiresAt: { type: Date },
@@ -15,6 +16,7 @@ const inviteSchema = new mongoose.Schema(
 );
 
 inviteSchema.methods.isUsable = function () {
+  if (this.used) return false;
   if (this.usedBy) return false;
   if (this.expiresAt && this.expiresAt < new Date()) return false;
   return true;

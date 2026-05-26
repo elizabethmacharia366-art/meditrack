@@ -7,6 +7,7 @@ import AdminDashboard from "./pages/admin/admindashboard";
 import ManageDoctors from "./pages/admin/managedoctors";
 import ManagePatients from "./pages/admin/managepatients";
 import ManageHospitals from "./pages/admin/managehospitals";
+import AdminInvites from "./pages/admin/invites";
 
 import DoctorDashboard from "./pages/doctor/doctordashboard";
 import Patients from "./pages/doctor/patient";
@@ -73,6 +74,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <WorkflowBoard backTo="/admin" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/invites"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminInvites />
             </ProtectedRoute>
           }
         />

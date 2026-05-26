@@ -73,6 +73,7 @@ describe('Auth', () => {
     expect(reg.body.token).toBeUndefined();
 
     const usedInvite = await Invite.findById(invite.body._id);
+    expect(usedInvite.used).toBe(true);
     expect(String(usedInvite.usedBy)).toBe(reg.body.id);
 
     let login = await request(app).post('/api/auth/login').send({

@@ -148,6 +148,7 @@ exports.register = async (req, res, next) => {
     await ensureProfile(user, req.body);
 
     if (invite) {
+      invite.used = true;
       invite.usedBy = user._id;
       invite.usedAt = new Date();
       await invite.save();

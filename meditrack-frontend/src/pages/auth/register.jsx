@@ -10,6 +10,7 @@ export default function Register() {
     password: "",
     role: "",
     inviteCode: "",
+    location: "",
   });
   const [error, setError] = useState("");
   const [info, setInfo] = useState(null); // { message, verificationLink }
@@ -28,6 +29,14 @@ export default function Register() {
       setError("All fields are required.");
       return;
     }
+    if (["doctor", "hospital"].includes(formData.role) && !formData.inviteCode.trim()) {
+      setError("Doctors and hospitals need an invite code from an admin.");
+      return;
+    }
+    if (formData.role === "hospital" && !formData.location.trim()) {
+      setError("Hospital registrations need a facility location.");
+      return;
+    }
     try {
       setSubmitting(true);
       const u = await register(formData);
@@ -41,20 +50,17 @@ export default function Register() {
         setSubmitting(false);
         return;
       }
-      // Tell the dashboard to greet the new user once.
-      sessionStorage.setItem("greet", "new");
-      // Patient (or invited doctor): if not verified yet, show the link first.
+      // Unverified accounts do not receive a session yet.
       if (u?.verificationLink) {
         setInfo({
           message:
-            "Account created. Please verify your email using the link below to enable full access.",
+            "Account created. Please verify your email, then sign in.",
           verificationLink: u.verificationLink,
         });
         setSubmitting(false);
-        // Still navigate after a moment so they can land on the dashboard.
-        setTimeout(() => navigate(`/${u.role}`), 4000);
         return;
       }
+      sessionStorage.setItem("greet", "new");
       navigate(`/${u.role}`);
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed");
@@ -113,15 +119,16 @@ export default function Register() {
               className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               <option value="">Select role</option>
-              <option value="doctor">Doctor</option>
               <option value="patient">Patient</option>
+              <option value="doctor">Doctor</option>
+              <option value="hospital">Hospital</option>
             </select>
           </div>
 
-          {formData.role === "doctor" && (
+          {["doctor", "hospital"].includes(formData.role) && (
             <div>
               <label className="block mb-2 font-medium text-gray-700">
-                Invite code <span className="text-gray-400 font-normal">(optional)</span>
+                Invite code
               </label>
               <input
                 type="text"
@@ -134,9 +141,22 @@ export default function Register() {
                 placeholder="Paste your admin invite code"
               />
               <p className="text-xs text-gray-500 mt-1">
-                With a valid invite, your account is approved immediately. Otherwise it will wait
-                for admin approval.
+                Admin invite codes are required for doctor and hospital accounts.
               </p>
+            </div>
+          )}
+
+          {formData.role === "hospital" && (
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">Facility location</label>
+              <input
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="City, state, or address"
+              />
             </div>
           )}
 

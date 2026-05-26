@@ -37,16 +37,34 @@ export const AuthProvider = ({ children }) => {
     return nextUser;
   };
 
-  const register = async ({ name, email, password, role, inviteCode }) => {
-    const { data } = await apiRegister({ name, email, password, role, inviteCode });
-    // Pending accounts (e.g. doctor without invite code) do not get a session.
-    if (data.pending || !data.token) {
+  const register = async ({
+    name,
+    email,
+    password,
+    role,
+    inviteCode,
+    location,
+    hospitalName,
+  }) => {
+    const { data } = await apiRegister({
+      name,
+      email,
+      password,
+      role,
+      inviteCode,
+      location,
+      hospitalName,
+    });
+    if (data.pending) {
       return {
         pending: true,
         message: data.message,
         verificationLink: data.verificationLink,
         ...data,
       };
+    }
+    if (!data.token) {
+      return data;
     }
     const nextUser = { id: data.id, name: data.name, email: data.email, role: data.role };
     setUser(nextUser);
