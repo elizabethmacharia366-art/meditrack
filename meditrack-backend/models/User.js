@@ -23,8 +23,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['patient', 'doctor', 'hospital', 'admin'], default: 'patient' },
 
   // Approval workflow.
-  // - patient: auto 'approved' on register
-  // - doctor/hospital: 'pending' until an admin reviews and approves
+  // - patient/doctor/hospital: 'pending' until an admin reviews and approves
   // - admin:  always 'approved' and created only by an existing admin
   status: {
     type: String,

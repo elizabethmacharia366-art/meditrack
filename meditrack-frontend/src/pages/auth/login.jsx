@@ -1,12 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/authcontext";
-
-const ROLE_PATHS = {
-  admin: "/admin",
-  doctor: "/doctor",
-  patient: "/patient",
-};
+import { getRoleHomePath } from "../../utils/roleRoutes";
 
 export default function Login() {
   const { login, logout } = useContext(AuthContext);
@@ -38,7 +33,7 @@ export default function Login() {
       setSubmitting(true);
       const u = await login(formData);
       sessionStorage.setItem("greet", "back");
-      navigate(ROLE_PATHS[u.role] || "/login", { replace: true });
+      navigate(getRoleHomePath(u.role), { replace: true });
     } catch (err) {
       const data = err.response?.data;
       setError(data?.error || "Login failed");

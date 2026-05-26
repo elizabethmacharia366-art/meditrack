@@ -160,6 +160,47 @@ describe('Auth', () => {
     expect(res.body.token).toEqual(expect.any(String));
   });
 
+  test('admin approval queue includes pending patients and approval preserves patient role', async () => {
+    const admin = await adminLogin(app);
+    const reg = await request(app).post('/api/auth/register').send({
+      name: 'Pending Patient',
+      email: 'pending-patient@example.com',
+      password: 'password123',
+      role: 'patient',
+    });
+    expect(reg.status).toBe(201);
+
+    const pending = await request(app)
+      .get('/api/admin/users?status=pending')
+      .set(auth(admin.token));
+    expect(pending.status).toBe(200);
+    expect(pending.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          email: 'pending-patient@example.com',
+          role: 'patient',
+          status: 'pending',
+        }),
+      ]),
+    );
+
+    const approval = await request(app)
+      .post(`/api/admin/users/${reg.body.id}/approve`)
+      .set(auth(admin.token));
+    expect(approval.status).toBe(200);
+    expect(approval.body.role).toBe('patient');
+    expect(approval.body.status).toBe('approved');
+
+    const login = await request(app).post('/api/auth/login').send({
+      email: 'pending-patient@example.com',
+      password: 'password123',
+      role: 'patient',
+    });
+    expect(login.status).toBe(200);
+    expect(login.body.role).toBe('patient');
+    expect(login.body.token).toEqual(expect.any(String));
+  });
+
   test('POST /api/auth/login rejects selected role mismatch', async () => {
     const reg = await request(app).post('/api/auth/register').send({
       name: 'Role Check', email: 'rolecheck@example.com', password: 'password123', role: 'patient',
