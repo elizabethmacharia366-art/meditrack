@@ -17,6 +17,7 @@ import PatientDashboard from "./pages/patient/patientdashboard";
 import ViewPrescriptions from "./pages/patient/viewprescriptions";
 import BookAppointment from "./pages/patient/bookappointment";
 import Hospitals from "./pages/patient/hospitals";
+import PatientHistory from "./pages/patient/history";
 
 import HospitalList from "./pages/hospital/hospitallist";
 import HospitalDetail from "./pages/hospital/hospitaldetail";
@@ -125,6 +126,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["patient"]}>
               <Hospitals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/patient/history"
+          element={
+            <ProtectedRoute allowedRoles={["patient"]}>
+              <PatientHistory />
             </ProtectedRoute>
           }
         />
