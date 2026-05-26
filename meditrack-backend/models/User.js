@@ -21,6 +21,27 @@ const userSchema = new mongoose.Schema({
   provider: { type: String, enum: ['email', 'google', 'other'], default: 'email' },
   providerId: { type: String },
   role: { type: String, enum: ['patient', 'doctor', 'admin'], default: 'patient' },
+
+  // Approval workflow.
+  // - patient: auto 'approved' on register
+  // - doctor: 'pending' unless registered with a valid invite code
+  // - admin:  always 'approved' (created via /admin-login by another admin)
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'approved',
+  },
+  rejectionReason: { type: String, trim: true },
+  approvedAt: { type: Date },
+  approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
+  // Email verification.
+  emailVerified: { type: Boolean, default: false },
+  verificationToken: { type: String, select: false },
+  verificationExpires: { type: Date, select: false },
+
+  // Invite tracking (for doctors).
+  inviteCode: { type: String, trim: true },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
@@ -46,6 +67,8 @@ userSchema.methods.toSafeJSON = function () {
     email: this.email,
     role: this.role,
     provider: this.provider,
+    status: this.status,
+    emailVerified: this.emailVerified,
   };
 };
 

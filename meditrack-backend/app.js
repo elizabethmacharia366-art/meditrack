@@ -13,6 +13,7 @@ const appointmentsRoutes = require('./routes/appointmentsRoutes');
 const prescriptionsRoutes = require('./routes/prescriptionsRoutes');
 const hospitalsRoutes = require('./routes/hospitalsRoutes');
 const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/prescriptions', prescriptionsRoutes);
 app.use('/api/hospitals', hospitalsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 fallback for unknown API routes
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Route not found' }));

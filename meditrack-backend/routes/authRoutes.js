@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, adminLogin, me } = require('../controllers/authController');
+const {
+  register,
+  login,
+  adminLogin,
+  me,
+  verifyEmail,
+  resendVerification,
+} = require('../controllers/authController');
 const { requireAuth } = require('../middleware/auth');
 
 /**
@@ -84,5 +91,10 @@ router.post('/admin-login', adminLogin);
  *       401: { $ref: '#/components/responses/Unauthorized' }
  */
 router.get('/me', requireAuth, me);
+
+// Email verification
+router.get('/verify-email', verifyEmail);
+router.post('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerification);
 
 module.exports = router;

@@ -47,8 +47,19 @@ export const register = (data) => API.post('/auth/register', data);
 export const login = (data) => API.post('/auth/login', data);
 export const adminLogin = (data) => API.post('/auth/admin-login', data);
 export const me = () => API.get('/auth/me');
+export const verifyEmail = (token) => API.post('/auth/verify-email', { token });
+export const resendVerification = (email) => API.post('/auth/resend-verification', { email });
 export const getMyPatient = () => API.get('/patients/me');
 export const updateMyPatient = (id, data) => API.put(`/patients/${id}`, data);
+
+// Admin approval & invites
+export const adminListUsers = (params) => API.get('/admin/users', { params });
+export const adminApproveUser = (id) => API.post(`/admin/users/${id}/approve`);
+export const adminRejectUser = (id, reason) =>
+  API.post(`/admin/users/${id}/reject`, { reason });
+export const adminListInvites = () => API.get('/admin/invites');
+export const adminCreateInvite = (data) => API.post('/admin/invites', data);
+export const adminRevokeInvite = (id) => API.delete(`/admin/invites/${id}`);
 
 export const setAuthToken = (token) => {
   if (token) {
