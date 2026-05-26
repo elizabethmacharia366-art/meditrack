@@ -11,9 +11,4 @@ router.post('/admins', ctrl.createAdmin);
 router.post('/users/:id/approve', ctrl.approveUser);
 router.post('/users/:id/reject', ctrl.rejectUser);
 
-// Invites
-router.get('/invites', ctrl.listInvites);
-router.post('/invites', ctrl.createInvite);
-router.delete('/invites/:id', ctrl.revokeInvite);
-
 module.exports = router;

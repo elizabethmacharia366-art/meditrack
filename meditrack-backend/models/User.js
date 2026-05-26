@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
 
   // Approval workflow.
   // - patient: auto 'approved' on register
-  // - doctor/hospital: 'pending' after invite-backed registration
+  // - doctor/hospital: 'pending' until an admin reviews and approves
   // - admin:  always 'approved' and created only by an existing admin
   status: {
     type: String,
@@ -40,8 +40,6 @@ const userSchema = new mongoose.Schema({
   verificationToken: { type: String, select: false },
   verificationExpires: { type: Date, select: false },
 
-  // Invite tracking (for doctors/hospitals).
-  inviteCode: { type: String, trim: true },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

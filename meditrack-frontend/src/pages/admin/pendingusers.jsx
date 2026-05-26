@@ -71,7 +71,7 @@ export default function PendingUsers() {
         <div>
           <h1 className="text-2xl font-bold">User Approvals</h1>
           <p className="text-gray-600 text-sm">
-            Review accounts and grant access. Doctors require approval unless they used an invite code.
+            Review doctor and hospital accounts before granting system access.
           </p>
         </div>
         <Link to="/admin" className="text-blue-600 hover:underline text-sm">

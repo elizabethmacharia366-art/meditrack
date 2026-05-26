@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const request = require('supertest');
 const User = require('../models/User');
-const Invite = require('../models/Invite');
 
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret';
@@ -61,17 +60,7 @@ async function verifyFromResponse(app, body) {
 // Register through the public flow, then return { token, user } ready for protected tests.
 async function registerUser(app, { name, email, password, role }) {
   const payload = { name, email, password, role };
-  if (['doctor', 'hospital'].includes(role)) {
-    const admin = await ensureTestAdmin();
-    const invite = await Invite.create({
-      code: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`.toUpperCase(),
-      role,
-      email,
-      createdBy: admin._id,
-    });
-    payload.inviteCode = invite.code;
-    if (role === 'hospital') payload.location = 'Test City';
-  }
+  if (role === 'hospital') payload.location = 'Test City';
 
   const res = await request(app).post('/api/auth/register').send(payload);
   if (res.status !== 201) {

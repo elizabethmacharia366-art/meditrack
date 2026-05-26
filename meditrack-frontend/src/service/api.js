@@ -57,9 +57,6 @@ export const adminListUsers = (params) => API.get('/admin/users', { params });
 export const adminApproveUser = (id) => API.post(`/admin/users/${id}/approve`);
 export const adminRejectUser = (id, reason) =>
   API.post(`/admin/users/${id}/reject`, { reason });
-export const adminListInvites = () => API.get('/admin/invites');
-export const adminCreateInvite = (data) => API.post('/admin/invites', data);
-export const adminRevokeInvite = (id) => API.delete(`/admin/invites/${id}`);
 
 export const setAuthToken = (token) => {
   if (token) {

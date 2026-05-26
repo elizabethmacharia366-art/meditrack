@@ -1,5 +1,4 @@
 const { startDB, stopDB, clearDB, buildApp, request, auth, adminLogin } = require('./setup');
-const Invite = require('../models/Invite');
 
 let app;
 
@@ -37,33 +36,13 @@ describe('Auth', () => {
     expect(res.status).toBe(403);
   });
 
-  test('POST /api/auth/register rejects doctor registration without an invite', async () => {
-    const res = await request(app).post('/api/auth/register').send({
-      name: 'Dr. No Invite',
-      email: 'noinvite@example.com',
-      password: 'password123',
-      role: 'doctor',
-    });
-    expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/invite code/i);
-  });
-
-  test('doctor registers with invite, verifies email, waits for admin approval, then can login', async () => {
+  test('doctor registers pending, verifies email, waits for admin approval, then can login', async () => {
     const admin = await adminLogin(app);
-    const invite = await request(app)
-      .post('/api/admin/invites')
-      .set(auth(admin.token))
-      .send({ role: 'doctor', email: 'doctor@example.com' });
-
-    expect(invite.status).toBe(201);
-    expect(invite.body.code).toEqual(expect.any(String));
-
     const reg = await request(app).post('/api/auth/register').send({
       name: 'Dr. Pending',
       email: 'doctor@example.com',
       password: 'password123',
       role: 'doctor',
-      inviteCode: invite.body.code,
       specialty: 'Cardiology',
     });
 
@@ -71,10 +50,6 @@ describe('Auth', () => {
     expect(reg.body.status).toBe('pending');
     expect(reg.body.pending).toBe(true);
     expect(reg.body.token).toBeUndefined();
-
-    const usedInvite = await Invite.findById(invite.body._id);
-    expect(usedInvite.used).toBe(true);
-    expect(String(usedInvite.usedBy)).toBe(reg.body.id);
 
     let login = await request(app).post('/api/auth/login').send({
       email: 'doctor@example.com',
@@ -108,39 +83,20 @@ describe('Auth', () => {
     expect(login.body.token).toEqual(expect.any(String));
   });
 
-  test('hospital registration requires matching invite and location', async () => {
-    const admin = await adminLogin(app);
-    const invite = await request(app)
-      .post('/api/admin/invites')
-      .set(auth(admin.token))
-      .send({ role: 'hospital', email: 'hospital@example.com' });
-
+  test('hospital registration requires location and waits for admin approval', async () => {
     const missingLocation = await request(app).post('/api/auth/register').send({
       name: 'Metro Hospital',
       email: 'hospital@example.com',
       password: 'password123',
       role: 'hospital',
-      inviteCode: invite.body.code,
     });
     expect(missingLocation.status).toBe(400);
-
-    const wrongEmail = await request(app).post('/api/auth/register').send({
-      name: 'Metro Hospital',
-      email: 'other@example.com',
-      password: 'password123',
-      role: 'hospital',
-      inviteCode: invite.body.code,
-      location: 'Nairobi',
-    });
-    expect(wrongEmail.status).toBe(400);
-    expect(wrongEmail.body.error).toMatch(/different email/i);
 
     const reg = await request(app).post('/api/auth/register').send({
       name: 'Metro Hospital',
       email: 'hospital@example.com',
       password: 'password123',
       role: 'hospital',
-      inviteCode: invite.body.code,
       location: 'Nairobi',
     });
     expect(reg.status).toBe(201);
@@ -149,16 +105,11 @@ describe('Auth', () => {
 
   test('admins can reject pending users', async () => {
     const admin = await adminLogin(app);
-    const invite = await request(app)
-      .post('/api/admin/invites')
-      .set(auth(admin.token))
-      .send({ role: 'doctor' });
     const reg = await request(app).post('/api/auth/register').send({
       name: 'Dr. Reject',
       email: 'reject@example.com',
       password: 'password123',
       role: 'doctor',
-      inviteCode: invite.body.code,
     });
 
     const rejection = await request(app)

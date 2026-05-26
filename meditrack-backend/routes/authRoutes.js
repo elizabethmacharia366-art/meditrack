@@ -15,7 +15,7 @@ const { requireAuth } = require('../middleware/auth');
  * /api/auth/register:
  *   post:
  *     tags: [Auth]
- *     summary: Register a patient, or an invited doctor/hospital
+ *     summary: Register a patient, doctor, or hospital
  *     security: []
  *     requestBody:
  *       required: true

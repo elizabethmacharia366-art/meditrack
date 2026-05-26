@@ -201,7 +201,7 @@ export default function AdminDashboard() {
         <button onClick={() => navigate("/admin/manage-patients")} className="p-6 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">Manage Patients</button>
         <button onClick={() => navigate("/admin/manage-doctors")} className="p-6 bg-green-600 text-white rounded-lg shadow hover:bg-green-700">Manage Doctors</button>
         <button onClick={() => navigate("/admin/manage-hospitals")} className="p-6 bg-teal-600 text-white rounded-lg shadow hover:bg-teal-700">Manage Hospitals</button>
-        <button onClick={() => navigate("/admin/invites")} className="p-6 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">Invite Codes</button>
+        <button onClick={() => navigate("/admin/approvals")} className="p-6 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700">User Approvals</button>
         <button onClick={() => navigate("/admin/workflow")} className="p-6 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700">Workflow Board</button>
       </section>
 

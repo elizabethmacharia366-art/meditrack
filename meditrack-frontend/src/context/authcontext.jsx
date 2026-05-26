@@ -42,7 +42,6 @@ export const AuthProvider = ({ children }) => {
     email,
     password,
     role,
-    inviteCode,
     location,
     hospitalName,
   }) => {
@@ -51,7 +50,6 @@ export const AuthProvider = ({ children }) => {
       email,
       password,
       role,
-      inviteCode,
       location,
       hospitalName,
     });

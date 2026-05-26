@@ -9,7 +9,6 @@ export default function Register() {
     email: "",
     password: "",
     role: "",
-    inviteCode: "",
     location: "",
   });
   const [error, setError] = useState("");
@@ -27,10 +26,6 @@ export default function Register() {
     setInfo(null);
     if (!formData.name || !formData.email || !formData.password || !formData.role) {
       setError("All fields are required.");
-      return;
-    }
-    if (["doctor", "hospital"].includes(formData.role) && !formData.inviteCode.trim()) {
-      setError("Doctors and hospitals need an invite code from an admin.");
       return;
     }
     if (formData.role === "hospital" && !formData.location.trim()) {
@@ -126,23 +121,8 @@ export default function Register() {
           </div>
 
           {["doctor", "hospital"].includes(formData.role) && (
-            <div>
-              <label className="block mb-2 font-medium text-gray-700">
-                Invite code
-              </label>
-              <input
-                type="text"
-                name="inviteCode"
-                value={formData.inviteCode}
-                onChange={(e) =>
-                  setFormData({ ...formData, inviteCode: e.target.value.toUpperCase() })
-                }
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 uppercase tracking-wider"
-                placeholder="Paste your admin invite code"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Admin invite codes are required for doctor and hospital accounts.
-              </p>
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-900 rounded p-3 text-sm">
+              Doctor and hospital accounts are reviewed by an admin before access is enabled.
             </div>
           )}
 

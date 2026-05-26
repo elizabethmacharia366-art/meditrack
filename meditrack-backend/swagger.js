@@ -50,7 +50,6 @@ const options = {
             email: { type: 'string', format: 'email' },
             password: { type: 'string', format: 'password' },
             role: { type: 'string', enum: ['patient', 'doctor', 'hospital'], default: 'patient' },
-            inviteCode: { type: 'string' },
             location: { type: 'string' },
             hospitalName: { type: 'string' },
           },

@@ -4,13 +4,11 @@ const User = require('../models/User');
 const Patient = require('../models/Patients');
 const Doctor = require('../models/Doctors');
 const Hospital = require('../models/Hospitals');
-const Invite = require('../models/Invite');
 const { JWT_SECRET } = require('../middleware/auth');
 
 const TOKEN_TTL = process.env.JWT_TTL || '7d';
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
-const INVITE_ROLES = ['doctor', 'hospital'];
-const SELF_REGISTER_ROLES = ['patient', ...INVITE_ROLES];
+const SELF_REGISTER_ROLES = ['patient', 'doctor', 'hospital'];
 
 const signToken = (user) =>
   jwt.sign({ id: String(user._id), role: user.role }, JWT_SECRET, { expiresIn: TOKEN_TTL });
@@ -72,28 +70,6 @@ const ensureProfile = async (user, body = {}) => {
   }
 };
 
-const findUsableInvite = async ({ role, inviteCode, email }) => {
-  if (!INVITE_ROLES.includes(role)) return null;
-  if (!inviteCode) {
-    const err = new Error(`${role} registration requires an invite code`);
-    err.status = 400;
-    throw err;
-  }
-
-  const invite = await Invite.findOne({ code: String(inviteCode).trim().toUpperCase() });
-  if (!invite || !invite.isUsable() || invite.role !== role) {
-    const err = new Error('Invalid or expired invite code');
-    err.status = 400;
-    throw err;
-  }
-  if (invite.email && invite.email !== email) {
-    const err = new Error('This invite is for a different email address');
-    err.status = 400;
-    throw err;
-  }
-  return invite;
-};
-
 exports.register = async (req, res, next) => {
   try {
     const {
@@ -103,7 +79,6 @@ exports.register = async (req, res, next) => {
       role = 'patient',
       provider = 'email',
       providerId,
-      inviteCode,
       location,
     } = req.body;
 
@@ -127,7 +102,6 @@ exports.register = async (req, res, next) => {
     const existing = await User.findOne({ email: normalizedEmail });
     if (existing) return res.status(409).json({ error: 'Email already registered' });
 
-    const invite = await findUsableInvite({ role, inviteCode, email: normalizedEmail });
     const status = role === 'patient' ? 'approved' : 'pending';
     const verification = buildVerification(provider);
 
@@ -140,19 +114,11 @@ exports.register = async (req, res, next) => {
       providerId,
       status,
       ...verification,
-      inviteCode: invite?.code,
       approvedAt: status === 'approved' ? new Date() : undefined,
     });
 
     await user.save();
     await ensureProfile(user, req.body);
-
-    if (invite) {
-      invite.used = true;
-      invite.usedBy = user._id;
-      invite.usedAt = new Date();
-      await invite.save();
-    }
 
     let verificationLink;
     if (user.verificationToken) {

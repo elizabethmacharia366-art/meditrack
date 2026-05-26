@@ -1,21 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-<<<<<<< ours
-  getDoctors,
-  getHospitals,
-  getMyPatient,
-  getAppointments,
-  createAppointment,
-  updateAppointment,
-  deleteAppointment,
-} from "../../service/api";
-
-const fmt = (d) => {
-  if (!d) return "—";
-  const dt = new Date(d);
-  return Number.isNaN(dt.getTime()) ? "—" : dt.toLocaleString();
-=======
   createAppointment,
   deleteAppointment,
   getAppointments,
@@ -38,7 +23,6 @@ const emptyForm = {
   time: "",
   issue: "",
   autoAssign: true,
->>>>>>> theirs
 };
 
 export default function BookAppointment() {
@@ -48,25 +32,10 @@ export default function BookAppointment() {
   const [appointments, setAppointments] = useState([]);
   const [patientId, setPatientId] = useState(null);
   const [loading, setLoading] = useState(true);
-<<<<<<< ours
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  const [form, setForm] = useState({
-    doctorId: "",
-    hospitalId: "",
-    date: "",
-    time: "",
-    issue: "",
-    autoAssign: true,
-  });
-=======
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [form, setForm] = useState(emptyForm);
->>>>>>> theirs
 
   const load = async () => {
     try {
@@ -96,25 +65,16 @@ export default function BookAppointment() {
   const filteredDoctors = useMemo(() => {
     if (!form.hospitalId) return doctors;
     return doctors.filter(
-<<<<<<< ours
-      (d) => String(d.hospitalId?._id || d.hospitalId || "") === String(form.hospitalId),
-=======
       (doctor) =>
         String(doctor.hospitalId?._id || doctor.hospitalId || "") === String(form.hospitalId),
->>>>>>> theirs
     );
   }, [doctors, form.hospitalId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-<<<<<<< ours
-    setSuccess("");
-    setError("");
-=======
     setError("");
     setSuccess("");
 
->>>>>>> theirs
     if (!patientId) {
       setError("Your patient profile is not set up. Please contact support.");
       return;
@@ -123,18 +83,6 @@ export default function BookAppointment() {
       setError("Date and time are required.");
       return;
     }
-<<<<<<< ours
-    if (form.autoAssign) {
-      if (!form.hospitalId) {
-        setError("Pick a hospital so we can auto-assign a doctor.");
-        return;
-      }
-      if (!form.issue.trim()) {
-        setError("Please describe your issue so we can match the right doctor.");
-        return;
-      }
-    } else if (!form.doctorId) {
-=======
     if (form.autoAssign && !form.hospitalId) {
       setError("Pick a hospital so we can auto-assign a doctor.");
       return;
@@ -144,62 +92,27 @@ export default function BookAppointment() {
       return;
     }
     if (!form.autoAssign && !form.doctorId) {
->>>>>>> theirs
       setError("Please select a doctor or switch to auto-assign.");
       return;
     }
 
-<<<<<<< ours
-    const when = new Date(`${form.date}T${form.time}`);
-    if (Number.isNaN(when.getTime())) {
-=======
     const date = new Date(`${form.date}T${form.time}`);
     if (Number.isNaN(date.getTime())) {
->>>>>>> theirs
       setError("Please enter a valid date and time.");
       return;
     }
 
     const payload = {
       patientId,
-<<<<<<< ours
-      date: when.toISOString(),
-    };
-    if (form.hospitalId) payload.hospitalId = form.hospitalId;
-    if (form.issue.trim()) payload.issue = form.issue.trim();
-    if (!form.autoAssign && form.doctorId) payload.doctorId = form.doctorId;
-=======
       date: date.toISOString(),
     };
     if (form.hospitalId) payload.hospitalId = form.hospitalId;
     if (form.issue.trim()) payload.issue = form.issue.trim();
     if (!form.autoAssign) payload.doctorId = form.doctorId;
->>>>>>> theirs
 
     try {
       setSaving(true);
       const { data } = await createAppointment(payload);
-<<<<<<< ours
-      const docName = data?.doctorId?.fullName || "your doctor";
-      const spec = data?.matchedSpecialty
-        ? ` (${data.matchedSpecialty})`
-        : data?.doctorId?.specialty
-        ? ` (${data.doctorId.specialty})`
-        : "";
-      setSuccess(
-        form.autoAssign
-          ? `You've been assigned to ${docName}${spec}.`
-          : "Appointment booked successfully.",
-      );
-      setForm({
-        doctorId: "",
-        hospitalId: "",
-        date: "",
-        time: "",
-        issue: "",
-        autoAssign: true,
-      });
-=======
       const doctorName = data?.doctorId?.fullName || "your doctor";
       const specialty = data?.matchedSpecialty || data?.doctorId?.specialty;
       setSuccess(
@@ -208,7 +121,6 @@ export default function BookAppointment() {
           : "Appointment booked successfully.",
       );
       setForm(emptyForm);
->>>>>>> theirs
       await load();
     } catch (err) {
       setError(err.response?.data?.error || "Failed to book appointment");
@@ -228,9 +140,6 @@ export default function BookAppointment() {
   };
 
   const remove = async (id) => {
-<<<<<<< ours
-    if (!win className="md:col-span-2 flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg p-3">
-=======
     if (!window.confirm("Delete this appointment?")) return;
     try {
       await deleteAppointment(id);
@@ -263,7 +172,6 @@ export default function BookAppointment() {
         className="bg-white shadow-md rounded-lg p-6 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4"
       >
         <div className="md:col-span-2 flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg p-3">
->>>>>>> theirs
           <input
             id="autoAssign"
             type="checkbox"
@@ -288,17 +196,11 @@ export default function BookAppointment() {
             className="border rounded-lg w-full px-3 py-2"
             required={form.autoAssign}
           >
-<<<<<<< ours
-            <option value="">{form.autoAssign ? "Select a hospital…" : "Any hospital"}</option>
-            {hospitals.map((h) => (
-              <option key={h._id} value={h._id}>{h.name}</option>
-=======
             <option value="">{form.autoAssign ? "Select a hospital..." : "Any hospital"}</option>
             {hospitals.map((hospital) => (
               <option key={hospital._id} value={hospital._id}>
                 {hospital.name}
               </option>
->>>>>>> theirs
             ))}
           </select>
         </div>
@@ -314,71 +216,11 @@ export default function BookAppointment() {
             disabled={form.autoAssign}
             required={!form.autoAssign}
           >
-<<<<<<< ours
-            <option value="">Select a doctor…</option>
-            {filteredDoctors.map((d) => (
-              <option key={d._id} value={d._id}>
-                {d.fullName}{d.specialty ? ` — ${d.specialty}` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block mb-1 text-sm font-medium text-gray-700">
-            What's your issue or symptoms?
-            {form.autoAssign && <span className="text-red-500"> *</span>}
-          </label>
-          <textarea
-            value={form.issue}
-            onChange={(e) => setForm({ ...form, issue: e.target.value })}
-            rows={2}
-            className="border rounded-lg w-full px-3 py-2"
-            placeholder="e.g. Chest pain and shortness of breath for 2 days"
-            required={form.autoAssign}
-          />
-          {form.autoAssign && (
-            <p className="text-xs text-gray-500 mt-1">
-              We'll match you to a specialist (cardiology, dermatology, pediatrics, etc.) at the selected hospital. If none match, we'll assign the least-busy available doctor.
-            </p>
-          )}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-md rounded-lg p-6 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4"
-      >
-        <div>
-          <label className="block mb-1 text-sm font-medium text-gray-700">Hospital (optional)</label>
-          <select
-            value={form.hospitalId}
-            onChange={(e) => setForm({ ...form, hospitalId: e.target.value, doctorId: "" })}
-            className="border rounded-lg w-full px-3 py-2"
-          >
-            <option value="">Any hospital</option>
-            {hospitals.map((h) => (
-              <option key={h._id} value={h._id}>{h.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block mb-1 text-sm font-medium text-gray-700">Doctor</label>
-          <select
-            value={form.doctorId}
-            onChange={(e) => setForm({ ...form, doctorId: e.target.value })}
-            className="border rounded-lg w-full px-3 py-2"
-            required
-          >
-            <option value="">Select a doctor…</option>
-            {filteredDoctors.map((d) => (
-              <option key={d._id} value={d._id}>
-                {d.fullName}{d.specialty ? ` — ${d.specialty}` : ""}
-=======
             <option value="">Select a doctor...</option>
             {filteredDoctors.map((doctor) => (
               <option key={doctor._id} value={doctor._id}>
                 {doctor.fullName}
                 {doctor.specialty ? ` - ${doctor.specialty}` : ""}
->>>>>>> theirs
               </option>
             ))}
           </select>
@@ -408,8 +250,6 @@ export default function BookAppointment() {
         </div>
 
         <div className="md:col-span-2">
-<<<<<<< ours
-=======
           <label className="block mb-1 text-sm font-medium text-gray-700">
             What's your issue or symptoms?
             {form.autoAssign && <span className="text-red-500"> *</span>}
@@ -430,17 +270,12 @@ export default function BookAppointment() {
         </div>
 
         <div className="md:col-span-2">
->>>>>>> theirs
           <button
             type="submit"
             disabled={saving || loading}
             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold px-5 py-2 rounded-lg"
           >
-<<<<<<< ours
-            {saving ? "Booking…" : "Book Appointment"}
-=======
             {saving ? "Booking..." : "Book Appointment"}
->>>>>>> theirs
           </button>
           <button
             type="button"
@@ -454,11 +289,7 @@ export default function BookAppointment() {
 
       <h2 className="text-lg font-semibold mb-3">My appointments</h2>
 
-<<<<<<< ours
-      {loading && <p className="text-gray-500">Loading…</p>}
-=======
       {loading && <p className="text-gray-500">Loading...</p>}
->>>>>>> theirs
 
       {!loading && appointments.length === 0 && (
         <div className="bg-white shadow rounded-lg p-6 text-center text-gray-600">
@@ -467,21 +298,6 @@ export default function BookAppointment() {
       )}
 
       <ul className="space-y-3">
-<<<<<<< ours
-        {appointments.map((a) => (
-          <li key={a._id} className="bg-white shadow rounded-lg p-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <p className="font-bold">
-                  {a.doctorId?.fullName || "Doctor"}
-                  {a.doctorId?.specialty ? ` — ${a.doctorId.specialty}` : ""}
-                  {a.hospitalId?.name ? ` @ ${a.hospitalId.name}` : ""}
-                </p>
-                <p className="text-sm text-gray-600">{fmt(a.date)}</p>
-                {a.issue && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    <span className="font-medium">Issue:</span> {a.issue}
-=======
         {appointments.map((appointment) => (
           <li key={appointment._id} className="bg-white shadow rounded-lg p-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -495,7 +311,6 @@ export default function BookAppointment() {
                 {appointment.issue && (
                   <p className="text-xs text-gray-500 mt-1">
                     <span className="font-medium">Issue:</span> {appointment.issue}
->>>>>>> theirs
                   </p>
                 )}
               </div>
@@ -503,29 +318,13 @@ export default function BookAppointment() {
                 <span
                   className={
                     "px-2 py-0.5 rounded-full text-xs font-semibold " +
-<<<<<<< ours
-                    (a.status === "Completed"
-                      ? "bg-green-100 text-green-700"
-                      : a.status === "Cancelled"
-=======
                     (appointment.status === "Completed"
                       ? "bg-green-100 text-green-700"
                       : appointment.status === "Cancelled"
->>>>>>> theirs
                       ? "bg-red-100 text-red-700"
                       : "bg-blue-100 text-blue-700")
                   }
                 >
-<<<<<<< ours
-                  {a.status || "Scheduled"}
-                </span>
-                {a.status !== "Cancelled" && (
-                  <button onClick={() => cancel(a._id)} className="text-yellow-700 hover:underline text-sm">
-                    Cancel
-                  </button>
-                )}
-                <button onClick={() => remove(a._id)} className="text-red-600 hover:underline text-sm">
-=======
                   {appointment.status || "Scheduled"}
                 </span>
                 {appointment.status !== "Cancelled" && (
@@ -542,7 +341,6 @@ export default function BookAppointment() {
                   onClick={() => remove(appointment._id)}
                   className="text-red-600 hover:underline text-sm"
                 >
->>>>>>> theirs
                   Delete
                 </button>
               </div>
