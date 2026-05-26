@@ -49,6 +49,38 @@ describe('Patients', () => {
     expect(docRes.status).toBe(200);
   });
 
+  test('GET /api/patients hides pending patients until admin approval', async () => {
+    const reg = await request(app).post('/api/auth/register').send({
+      name: 'Pending Patient',
+      email: 'pending.patient@example.com',
+      password: 'password123',
+      role: 'patient',
+    });
+    expect(reg.status).toBe(201);
+    expect(reg.body.status).toBe('pending');
+
+    const beforeApproval = await request(app).get('/api/patients').set(auth(adminToken));
+    expect(beforeApproval.status).toBe(200);
+    expect(
+      beforeApproval.body.some((patient) => (
+        patient.userId?.email === 'pending.patient@example.com'
+      )),
+    ).toBe(false);
+
+    const approval = await request(app)
+      .post(`/api/admin/users/${reg.body.id}/approve`)
+      .set(auth(adminToken));
+    expect(approval.status).toBe(200);
+
+    const afterApproval = await request(app).get('/api/patients').set(auth(adminToken));
+    expect(afterApproval.status).toBe(200);
+    expect(
+      afterApproval.body.some((patient) => (
+        patient.userId?.email === 'pending.patient@example.com'
+      )),
+    ).toBe(true);
+  });
+
   test('GET /api/patients/me returns the patient profile', async () => {
     const res = await request(app).get('/api/patients/me').set(auth(patientToken));
     expect(res.status).toBe(200);

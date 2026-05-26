@@ -16,8 +16,11 @@ const pickPatientFields = (body) => {
 // Admin & doctors can list. Patients can only see themselves via /me.
 exports.getPatients = async (req, res, next) => {
   try {
-    const patients = await Patient.find().populate('userId', 'name email role');
-    res.json(patients);
+    const patients = await Patient.find().populate('userId', 'name email role status');
+    const approvedPatients = patients.filter((patient) => (
+      !patient.userId || patient.userId.status === 'approved'
+    ));
+    res.json(approvedPatients);
   } catch (err) {
     next(err);
   }
