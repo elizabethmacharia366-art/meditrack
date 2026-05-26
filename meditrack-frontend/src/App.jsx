@@ -10,6 +10,7 @@ import ManageHospitals from "./pages/admin/managehospitals";
 
 import DoctorDashboard from "./pages/doctor/doctordashboard";
 import Patients from "./pages/doctor/patient";
+import DoctorPatientDetail from "./pages/doctor/patientdetail";
 import Prescriptions from "./pages/doctor/prescription";
 import Appointments from "./pages/doctor/appointments";
 
@@ -18,9 +19,13 @@ import ViewPrescriptions from "./pages/patient/viewprescriptions";
 import BookAppointment from "./pages/patient/bookappointment";
 import Hospitals from "./pages/patient/hospitals";
 import PatientHistory from "./pages/patient/history";
+import PatientProfile from "./pages/patient/profile";
+import PatientFAQ from "./pages/patient/faq";
 
 import HospitalList from "./pages/hospital/hospitallist";
 import HospitalDetail from "./pages/hospital/hospitaldetail";
+
+import WorkflowBoard from "./pages/workflowboard";
 
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
@@ -63,6 +68,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/workflow"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <WorkflowBoard backTo="/admin" />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/doctor"
@@ -77,6 +90,22 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["doctor"]}>
               <Patients />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/doctor/patients/:id"
+          element={
+            <ProtectedRoute allowedRoles={["doctor"]}>
+              <DoctorPatientDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/doctor/workflow"
+          element={
+            <ProtectedRoute allowedRoles={["doctor"]}>
+              <WorkflowBoard backTo="/doctor" />
             </ProtectedRoute>
           }
         />
@@ -110,6 +139,22 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["patient"]}>
               <ViewPrescriptions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/patient/profile"
+          element={
+            <ProtectedRoute allowedRoles={["patient"]}>
+              <PatientProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/patient/faq"
+          element={
+            <ProtectedRoute allowedRoles={["patient"]}>
+              <PatientFAQ />
             </ProtectedRoute>
           }
         />

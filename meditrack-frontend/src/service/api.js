@@ -47,6 +47,8 @@ export const register = (data) => API.post('/auth/register', data);
 export const login = (data) => API.post('/auth/login', data);
 export const adminLogin = (data) => API.post('/auth/admin-login', data);
 export const me = () => API.get('/auth/me');
+export const getMyPatient = () => API.get('/patients/me');
+export const updateMyPatient = (id, data) => API.put(`/patients/${id}`, data);
 
 export const setAuthToken = (token) => {
   if (token) {

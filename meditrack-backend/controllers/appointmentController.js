@@ -96,7 +96,7 @@ exports.updateAppointment = async (req, res, next) => {
       if (!patient || String(existing.patientId) !== String(patient._id)) {
         return res.status(403).json({ error: 'Forbidden' });
       }
-      // Patients can really only cancel.
+      // Patients can really only schedule or cancel.
       if (req.body.status && !['Scheduled', 'Cancelled'].includes(req.body.status)) {
         return res.status(403).json({ error: 'Patients cannot set that status' });
       }
