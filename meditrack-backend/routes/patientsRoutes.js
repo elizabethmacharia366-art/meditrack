@@ -57,6 +57,25 @@ router.post('/', requireRole('admin'), controller.createPatient);
 
 /**
  * @openapi
+ * /api/patients/{id}/history:
+ *   get:
+ *     tags: [Patients]
+ *     summary: Get a patient's appointment & prescription history (self, treating doctor, or admin)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Patient with related appointments and prescriptions
+ *       403: { $ref: '#/components/responses/Forbidden' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ */
+router.get('/:id/history', controller.getPatientHistory);
+
+/**
+ * @openapi
  * /api/patients/{id}:
  *   get:
  *     tags: [Patients]

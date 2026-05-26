@@ -16,6 +16,8 @@ API.interceptors.request.use((config) => {
 });
 
 export const getPatients = () => API.get("/patients");
+export const getPatient = (id) => API.get(`/patients/${id}`);
+export const getPatientHistory = (id) => API.get(`/patients/${id}/history`);
 export const createPatient = (data) => API.post("/patients", data);
 export const updatePatient = (id, data) => API.put(`/patients/${id}`, data);
 export const deletePatient = (id) => API.delete(`/patients/${id}`);

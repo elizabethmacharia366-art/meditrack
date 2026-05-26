@@ -1,4 +1,5 @@
 const Patient = require('../models/Patients');
+const Doctor = require('../models/Doctors');
 const Appointment = require('../models/Appointments');
 const Prescription = require('../models/Prescriptions');
 
@@ -81,6 +82,47 @@ exports.deletePatient = async (req, res, next) => {
     await Prescription.deleteMany({ patientId: patient._id });
 
     res.json({ message: 'Patient deleted' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Returns a patient's appointments + prescriptions, scoped by role:
+// - admin: full history
+// - patient (self): full history
+// - doctor: only records they themselves issued/are assigned to
+exports.getPatientHistory = async (req, res, next) => {
+  try {
+    const patient = await Patient.findById(req.params.id).populate(
+      'userId',
+      'name email role',
+    );
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    const apptFilter = { patientId: patient._id };
+    const presFilter = { patientId: patient._id };
+
+    if (req.user.role === 'patient') {
+      if (String(patient.userId?._id || patient.userId) !== req.user.id) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+    } else if (req.user.role === 'doctor') {
+      const doctor = await Doctor.findOne({ userId: req.user.id }).select('_id');
+      if (!doctor) return res.status(403).json({ error: 'No doctor profile' });
+      apptFilter.doctorId = doctor._id;
+      presFilter.doctorId = doctor._id;
+    }
+
+    const [appointments, prescriptions] = await Promise.all([
+      Appointment.find(apptFilter)
+        .populate('doctorId hospitalId')
+        .sort({ date: -1 }),
+      Prescription.find(presFilter)
+        .populate('doctorId')
+        .sort({ createdAt: -1 }),
+    ]);
+
+    res.json({ patient, appointments, prescriptions });
   } catch (err) {
     next(err);
   }
