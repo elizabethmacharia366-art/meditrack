@@ -10,6 +10,9 @@ const appointmentSchema = new mongoose.Schema({
     enum: ['Scheduled', 'In Treatment', 'Completed', 'Cancelled'],
     default: 'Scheduled',
   },
+  // Patient-reported issue / symptoms used to auto-route to a specialist.
+  issue: { type: String, trim: true },
+  matchedSpecialty: { type: String, trim: true },
   reminderDate: { type: Date },
   reminderMessage: { type: String },
   reminderSent: { type: Boolean, default: false }

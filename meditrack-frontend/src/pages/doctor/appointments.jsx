@@ -99,6 +99,7 @@ export default function Appointments() {
                 <th className="p-3">Patient</th>
                 <th className="p-3">Date</th>
                 <th className="p-3">Hospital</th>
+                <th className="p-3">Issue</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Action</th>
               </tr>
@@ -109,6 +110,20 @@ export default function Appointments() {
                   <td className="p-3">{a.patientId?.fullName || "Unknown"}</td>
                   <td className="p-3">{fmt(a.date)}</td>
                   <td className="p-3">{a.hospitalId?.name || "—"}</td>
+                  <td className="p-3 text-gray-700 max-w-xs">
+                    {a.issue ? (
+                      <>
+                        <div className="truncate" title={a.issue}>{a.issue}</div>
+                        {a.matchedSpecialty && (
+                          <div className="text-xs text-blue-700 mt-0.5">
+                            Routed: {a.matchedSpecialty}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td className="p-3">
                     <span
                       className={

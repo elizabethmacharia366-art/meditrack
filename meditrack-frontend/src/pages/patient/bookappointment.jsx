@@ -32,6 +32,8 @@ export default function BookAppointment() {
     hospitalId: "",
     date: "",
     time: "",
+    issue: "",
+    autoAssign: true,
   });
 
   const load = async () => {
@@ -74,27 +76,60 @@ export default function BookAppointment() {
       setError("Your patient profile is not set up. Please contact support.");
       return;
     }
-    if (!form.doctorId || !form.date || !form.time) {
-      setError("Doctor, date, and time are required.");
+    if (!form.date || !form.time) {
+      setError("Date and time are required.");
       return;
     }
+    if (form.autoAssign) {
+      if (!form.hospitalId) {
+        setError("Pick a hospital so we can auto-assign a doctor.");
+        return;
+      }
+      if (!form.issue.trim()) {
+        setError("Please describe your issue so we can match the right doctor.");
+        return;
+      }
+    } else if (!form.doctorId) {
+      setError("Please select a doctor or switch to auto-assign.");
+      return;
+    }
+
     const when = new Date(`${form.date}T${form.time}`);
     if (Number.isNaN(when.getTime())) {
       setError("Please enter a valid date and time.");
       return;
     }
+
     const payload = {
       patientId,
-      doctorId: form.doctorId,
       date: when.toISOString(),
     };
     if (form.hospitalId) payload.hospitalId = form.hospitalId;
+    if (form.issue.trim()) payload.issue = form.issue.trim();
+    if (!form.autoAssign && form.doctorId) payload.doctorId = form.doctorId;
 
     try {
       setSaving(true);
-      await createAppointment(payload);
-      setSuccess("Appointment booked successfully.");
-      setForm({ doctorId: "", hospitalId: "", date: "", time: "" });
+      const { data } = await createAppointment(payload);
+      const docName = data?.doctorId?.fullName || "your doctor";
+      const spec = data?.matchedSpecialty
+        ? ` (${data.matchedSpecialty})`
+        : data?.doctorId?.specialty
+        ? ` (${data.doctorId.specialty})`
+        : "";
+      setSuccess(
+        form.autoAssign
+          ? `You've been assigned to ${docName}${spec}.`
+          : "Appointment booked successfully.",
+      );
+      setForm({
+        doctorId: "",
+        hospitalId: "",
+        date: "",
+        time: "",
+        issue: "",
+        autoAssign: true,
+      });
       await load();
     } catch (err) {
       setError(err.response?.data?.error || "Failed to book appointment");
@@ -114,35 +149,76 @@ export default function BookAppointment() {
   };
 
   const remove = async (id) => {
-    if (!window.confirm("Permanently delete this appointment?")) return;
-    try {
-      await deleteAppointment(id);
-      await load();
-    } catch (err) {
-      setError(err.response?.data?.error || "Failed to delete appointment");
-    }
-  };
-
-  return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Book Appointment</h1>
-        <Link to="/patient" className="text-blue-600 hover:underline text-sm">
-          ← Back to dashboard
-        </Link>
-      </div>
-
-      {error && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
-          {error}
+    if (!win className="md:col-span-2 flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg p-3">
+          <input
+            id="autoAssign"
+            type="checkbox"
+            checked={form.autoAssign}
+            onChange={(e) =>
+              setForm({ ...form, autoAssign: e.target.checked, doctorId: "" })
+            }
+            className="h-4 w-4"
+          />
+          <label htmlFor="autoAssign" className="text-sm text-blue-900">
+            Auto-assign me to the best available doctor based on my issue.
+          </label>
         </div>
-      )}
-      {success && (
-        <div className="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 text-sm">
-          {success}
-        </div>
-      )}
 
+        <div>
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Hospital{form.autoAssign ? "" : " (optional)"}
+          </label>
+          <select
+            value={form.hospitalId}
+            onChange={(e) => setForm({ ...form, hospitalId: e.target.value, doctorId: "" })}
+            className="border rounded-lg w-full px-3 py-2"
+            required={form.autoAssign}
+          >
+            <option value="">{form.autoAssign ? "Select a hospital…" : "Any hospital"}</option>
+            {hospitals.map((h) => (
+              <option key={h._id} value={h._id}>{h.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Doctor {form.autoAssign && <span className="text-gray-400">(auto-assigned)</span>}
+          </label>
+          <select
+            value={form.doctorId}
+            onChange={(e) => setForm({ ...form, doctorId: e.target.value })}
+            className="border rounded-lg w-full px-3 py-2 disabled:bg-gray-100"
+            disabled={form.autoAssign}
+            required={!form.autoAssign}
+          >
+            <option value="">Select a doctor…</option>
+            {filteredDoctors.map((d) => (
+              <option key={d._id} value={d._id}>
+                {d.fullName}{d.specialty ? ` — ${d.specialty}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            What's your issue or symptoms?
+            {form.autoAssign && <span className="text-red-500"> *</span>}
+          </label>
+          <textarea
+            value={form.issue}
+            onChange={(e) => setForm({ ...form, issue: e.target.value })}
+            rows={2}
+            className="border rounded-lg w-full px-3 py-2"
+            placeholder="e.g. Chest pain and shortness of breath for 2 days"
+            required={form.autoAssign}
+          />
+          {form.autoAssign && (
+            <p className="text-xs text-gray-500 mt-1">
+              We'll match you to a specialist (cardiology, dermatology, pediatrics, etc.) at the selected hospital. If none match, we'll assign the least-busy available doctor.
+            </p>
+          )}
       <form
         onSubmit={handleSubmit}
         className="bg-white shadow-md rounded-lg p-6 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4"
@@ -236,9 +312,15 @@ export default function BookAppointment() {
               <div>
                 <p className="font-bold">
                   {a.doctorId?.fullName || "Doctor"}
+                  {a.doctorId?.specialty ? ` — ${a.doctorId.specialty}` : ""}
                   {a.hospitalId?.name ? ` @ ${a.hospitalId.name}` : ""}
                 </p>
                 <p className="text-sm text-gray-600">{fmt(a.date)}</p>
+                {a.issue && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    <span className="font-medium">Issue:</span> {a.issue}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <span
