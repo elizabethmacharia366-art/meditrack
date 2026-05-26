@@ -13,7 +13,6 @@ export default function Register() {
     location: "",
   });
   const [error, setError] = useState("");
-  const [info, setInfo] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -30,7 +29,6 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setInfo(null);
     if (!formData.name || !formData.email || !formData.password || !formData.role) {
       setError("All fields are required.");
       return;
@@ -43,12 +41,16 @@ export default function Register() {
       setSubmitting(true);
       const u = await register(formData);
       if (u?.pending) {
-        setInfo({
-          message:
-            u.message ||
-            "Your account has been created and is awaiting admin approval.",
+        navigate("/login", {
+          replace: true,
+          state: {
+            info:
+              u.message ||
+              "Your account has been created and is awaiting admin approval.",
+            email: formData.email,
+            role: formData.role,
+          },
         });
-        setSubmitting(false);
         return;
       }
       sessionStorage.setItem("greet", "new");
@@ -142,18 +144,12 @@ export default function Register() {
             </div>
           )}
 
-          {info && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded p-3 text-sm space-y-2">
-              <div className="font-medium">{info.message}</div>
-            </div>
-          )}
-
           <button
             type="submit"
-            disabled={submitting || !!info}
+            disabled={submitting}
             className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold py-2 rounded-lg shadow-md transition"
           >
-            {submitting ? "Creating..." : info ? "Done" : "Sign Up"}
+            {submitting ? "Creating..." : "Sign Up"}
           </button>
         </form>
       </div>

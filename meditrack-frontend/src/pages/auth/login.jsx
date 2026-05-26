@@ -1,13 +1,18 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/authcontext";
 import { getRoleHomePath } from "../../utils/roleRoutes";
 
 export default function Login() {
   const { login, logout } = useContext(AuthContext);
-  const [formData, setFormData] = useState({ email: "", password: "", role: "" });
-  const [error, setError] = useState("");
-  const [errorKind, setErrorKind] = useState("");
+  const location = useLocation();
+  const [formData, setFormData] = useState({
+    email: location.state?.email || "",
+    password: "",
+    role: location.state?.role || "",
+  });
+  const [error, setError] = useState(location.state?.info || "");
+  const [errorKind, setErrorKind] = useState(location.state?.info ? "pending" : "");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
