@@ -10,7 +10,7 @@ afterAll(stopDB);
 beforeEach(clearDB);
 
 describe('Auth', () => {
-  test('POST /api/auth/register creates an approved patient pending email verification', async () => {
+  test('POST /api/auth/register creates an approved patient that can sign in immediately', async () => {
     const res = await request(app).post('/api/auth/register').send({
       name: 'Jane',
       email: 'jane@example.com',
@@ -18,11 +18,11 @@ describe('Auth', () => {
       role: 'patient',
     });
     expect(res.status).toBe(201);
-    expect(res.body.token).toBeUndefined();
+    expect(res.body.token).toEqual(expect.any(String));
     expect(res.body.role).toBe('patient');
     expect(res.body.status).toBe('approved');
-    expect(res.body.emailVerified).toBe(false);
-    expect(res.body.verificationLink).toEqual(expect.any(String));
+    expect(res.body.emailVerified).toBe(true);
+    expect(res.body.verificationLink).toBeUndefined();
     expect(res.body.email).toBe('jane@example.com');
   });
 
@@ -132,12 +132,10 @@ describe('Auth', () => {
     expect(res.status).toBe(409);
   });
 
-  test('POST /api/auth/login succeeds after email verification', async () => {
-    const reg = await request(app).post('/api/auth/register').send({
+  test('POST /api/auth/login succeeds for patient without email verification', async () => {
+    await request(app).post('/api/auth/register').send({
       name: 'Lo', email: 'lo@example.com', password: 'password123',
     });
-    const token = new URL(reg.body.verificationLink).searchParams.get('token');
-    await request(app).post('/api/auth/verify-email').send({ token });
     const res = await request(app).post('/api/auth/login').send({
       email: 'lo@example.com', password: 'password123',
     });
@@ -146,11 +144,9 @@ describe('Auth', () => {
   });
 
   test('POST /api/auth/login rejects selected role mismatch', async () => {
-    const reg = await request(app).post('/api/auth/register').send({
+    await request(app).post('/api/auth/register').send({
       name: 'Role Check', email: 'rolecheck@example.com', password: 'password123', role: 'patient',
     });
-    const token = new URL(reg.body.verificationLink).searchParams.get('token');
-    await request(app).post('/api/auth/verify-email').send({ token });
 
     const res = await request(app).post('/api/auth/login').send({
       email: 'rolecheck@example.com',
@@ -200,11 +196,9 @@ describe('Auth', () => {
   });
 
   test('GET /api/auth/me returns the current user with a valid token', async () => {
-    const reg = await request(app).post('/api/auth/register').send({
+    await request(app).post('/api/auth/register').send({
       name: 'Me', email: 'me@example.com', password: 'password123',
     });
-    const token = new URL(reg.body.verificationLink).searchParams.get('token');
-    await request(app).post('/api/auth/verify-email').send({ token });
     const login = await request(app).post('/api/auth/login').send({
       email: 'me@example.com', password: 'password123',
     });
@@ -214,11 +208,9 @@ describe('Auth', () => {
   });
 
   test('PUT /api/auth/me updates current user profile', async () => {
-    const reg = await request(app).post('/api/auth/register').send({
+    await request(app).post('/api/auth/register').send({
       name: 'Old Name', email: 'oldname@example.com', password: 'password123',
     });
-    const verifyToken = new URL(reg.body.verificationLink).searchParams.get('token');
-    await request(app).post('/api/auth/verify-email').send({ token: verifyToken });
     const login = await request(app).post('/api/auth/login').send({
       email: 'oldname@example.com', password: 'password123',
     });

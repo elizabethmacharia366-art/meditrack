@@ -34,6 +34,11 @@ const buildVerification = (provider) => {
   };
 };
 
+const buildRegistrationVerification = (role, provider) => {
+  if (role === 'patient') return { emailVerified: true };
+  return buildVerification(provider);
+};
+
 const ensureProfile = async (user, body = {}) => {
   if (user.role === 'patient') {
     const existing = await Patient.findOne({ userId: user._id });
@@ -120,7 +125,7 @@ exports.register = async (req, res, next) => {
     if (existing) return res.status(409).json({ error: 'Email already registered' });
 
     const status = role === 'patient' ? 'approved' : 'pending';
-    const verification = buildVerification(provider);
+    const verification = buildRegistrationVerification(role, provider);
 
     const user = new User({
       name,
