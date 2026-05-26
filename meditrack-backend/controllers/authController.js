@@ -34,7 +34,11 @@ const buildVerification = (provider) => {
   };
 };
 
-const buildRegistrationVerification = () => ({ emailVerified: true });
+const buildRegistrationVerification = () => ({
+  emailVerified: false,
+  verificationToken: undefined,
+  verificationExpires: undefined,
+});
 
 const ensureProfile = async (user, body = {}) => {
   if (user.role === 'patient') {
@@ -219,6 +223,17 @@ const rejectInactive = (user, res) => {
   return false;
 };
 
+const rejectUnverified = (user, res) => {
+  if (user.role !== 'admin' && !user.emailVerified) {
+    res.status(403).json({
+      error: 'Your account is awaiting admin approval.',
+      status: user.status,
+    });
+    return true;
+  }
+  return false;
+};
+
 exports.login = async (req, res, next) => {
   try {
     const { email, password, provider = 'email', role } = req.body;
@@ -239,6 +254,7 @@ exports.login = async (req, res, next) => {
     }
 
     if (rejectInactive(user, res)) return undefined;
+    if (rejectUnverified(user, res)) return undefined;
 
     const token = signToken(user);
     return res.json({ token, ...user.toSafeJSON() });

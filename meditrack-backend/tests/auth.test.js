@@ -30,7 +30,7 @@ describe('Auth', () => {
     expect(res.body.pending).toBe(true);
     expect(res.body.role).toBe('patient');
     expect(res.body.status).toBe('pending');
-    expect(res.body.emailVerified).toBe(true);
+    expect(res.body.emailVerified).toBe(false);
     expect(res.body.verificationLink).toBeUndefined();
     expect(res.body.email).toBe('jane@example.com');
   });
@@ -47,6 +47,47 @@ describe('Auth', () => {
     expect(patient.status).toBe('pending');
     expect(patient.approvedAt).toBeUndefined();
     expect(patient.approvedBy).toBeUndefined();
+  });
+
+  test('patients cannot bypass approval with email verification state', async () => {
+    const verifiedButPending = await User.create({
+      name: 'Verified Pending',
+      email: 'verified-pending@example.com',
+      password: 'password123',
+      role: 'patient',
+      provider: 'email',
+      emailVerified: true,
+    });
+    expect(verifiedButPending.status).toBe('pending');
+
+    let res = await request(app).post('/api/auth/login').send({
+      email: 'verified-pending@example.com',
+      password: 'password123',
+      role: 'patient',
+    });
+    expect(res.status).toBe(403);
+    expect(res.body.status).toBe('pending');
+
+    const approvedButUnverified = await User.create({
+      name: 'Approved Unverified',
+      email: 'approved-unverified@example.com',
+      password: 'password123',
+      role: 'patient',
+      provider: 'email',
+      status: 'approved',
+      emailVerified: false,
+    });
+    expect(approvedButUnverified.status).toBe('approved');
+    expect(approvedButUnverified.emailVerified).toBe(false);
+
+    res = await request(app).post('/api/auth/login').send({
+      email: 'approved-unverified@example.com',
+      password: 'password123',
+      role: 'patient',
+    });
+    expect(res.status).toBe(403);
+    expect(res.body.status).toBe('approved');
+    expect(res.body.token).toBeUndefined();
   });
 
   test('POST /api/auth/register rejects role=admin', async () => {
