@@ -70,6 +70,23 @@ const ensureProfile = async (user, body = {}) => {
   }
 };
 
+const pickProfileUpdates = (body = {}) => {
+  const updates = {};
+  if (typeof body.name === 'string') updates.name = body.name.trim();
+  if (typeof body.email === 'string') updates.email = body.email.toLowerCase().trim();
+  return updates;
+};
+
+const syncProfileName = async (user) => {
+  if (user.role === 'patient') {
+    await Patient.findOneAndUpdate({ userId: user._id }, { fullName: user.name });
+  } else if (user.role === 'doctor') {
+    await Doctor.findOneAndUpdate({ userId: user._id }, { fullName: user.name });
+  } else if (user.role === 'hospital') {
+    await Hospital.findOneAndUpdate({ userId: user._id }, { name: user.name });
+  }
+};
+
 exports.register = async (req, res, next) => {
   try {
     const {
@@ -221,13 +238,16 @@ const rejectInactive = (user, res) => {
 
 exports.login = async (req, res, next) => {
   try {
-    const { email, password, provider = 'email' } = req.body;
+    const { email, password, provider = 'email', role } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required' });
 
     const user = await User.findOne({ email: email.toLowerCase().trim(), provider }).select(
       '+password',
     );
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    if (role && role !== user.role) {
+      return res.status(403).json({ error: `This account is registered as ${user.role}.` });
+    }
 
     if (provider === 'email') {
       if (!password) return res.status(401).json({ error: 'Invalid credentials' });
@@ -285,6 +305,58 @@ exports.me = async (req, res, next) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user.toSafeJSON());
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.updateMe = async (req, res, next) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+
+    const updates = pickProfileUpdates(req.body);
+    if ('name' in updates && !updates.name) {
+      return res.status(400).json({ error: 'Name cannot be empty' });
+    }
+    if ('email' in updates && !updates.email) {
+      return res.status(400).json({ error: 'Email cannot be empty' });
+    }
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No profile fields provided' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (updates.email && updates.email !== user.email) {
+      const existing = await User.findOne({ email: updates.email, _id: { $ne: user._id } });
+      if (existing) return res.status(409).json({ error: 'Email already registered' });
+
+      user.email = updates.email;
+      if (user.role !== 'admin') {
+        user.emailVerified = false;
+        user.verificationToken = generateToken();
+        user.verificationExpires = new Date(Date.now() + 1000 * 60 * 60 * 24);
+      }
+    }
+
+    if (updates.name) user.name = updates.name;
+
+    await user.save();
+    if (updates.name) await syncProfileName(user);
+
+    let verificationLink;
+    if (user.verificationToken) {
+      verificationLink = sendVerificationEmail(user, user.verificationToken);
+    }
+
+    res.json({
+      message: verificationLink
+        ? 'Profile updated. Please verify your new email before signing in again.'
+        : 'Profile updated.',
+      ...user.toSafeJSON(),
+      verificationLink: process.env.NODE_ENV === 'production' ? undefined : verificationLink,
+    });
   } catch (err) {
     next(err);
   }

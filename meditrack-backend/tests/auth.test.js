@@ -155,6 +155,21 @@ describe('Auth', () => {
     expect(res.body.token).toEqual(expect.any(String));
   });
 
+  test('POST /api/auth/login rejects selected role mismatch', async () => {
+    const reg = await request(app).post('/api/auth/register').send({
+      name: 'Role Check', email: 'rolecheck@example.com', password: 'password123', role: 'patient',
+    });
+    const token = new URL(reg.body.verificationLink).searchParams.get('token');
+    await request(app).post('/api/auth/verify-email').send({ token });
+
+    const res = await request(app).post('/api/auth/login').send({
+      email: 'rolecheck@example.com',
+      password: 'password123',
+      role: 'doctor',
+    });
+    expect(res.status).toBe(403);
+  });
+
   test('POST /api/auth/login fails with wrong password', async () => {
     await request(app).post('/api/auth/register').send({
       name: 'Lo', email: 'lo@example.com', password: 'password123',
@@ -206,5 +221,24 @@ describe('Auth', () => {
     const res = await request(app).get('/api/auth/me').set(auth(login.body.token));
     expect(res.status).toBe(200);
     expect(res.body.email).toBe('me@example.com');
+  });
+
+  test('PUT /api/auth/me updates current user profile', async () => {
+    const reg = await request(app).post('/api/auth/register').send({
+      name: 'Old Name', email: 'oldname@example.com', password: 'password123',
+    });
+    const verifyToken = new URL(reg.body.verificationLink).searchParams.get('token');
+    await request(app).post('/api/auth/verify-email').send({ token: verifyToken });
+    const login = await request(app).post('/api/auth/login').send({
+      email: 'oldname@example.com', password: 'password123',
+    });
+
+    const res = await request(app)
+      .put('/api/auth/me')
+      .set(auth(login.body.token))
+      .send({ name: 'New Name' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe('New Name');
   });
 });

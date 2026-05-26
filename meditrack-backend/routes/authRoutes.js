@@ -5,6 +5,7 @@ const {
   login,
   adminLogin,
   me,
+  updateMe,
   verifyEmail,
   resendVerification,
 } = require('../controllers/authController');
@@ -91,6 +92,7 @@ router.post('/admin-login', adminLogin);
  *       401: { $ref: '#/components/responses/Unauthorized' }
  */
 router.get('/me', requireAuth, me);
+router.put('/me', requireAuth, updateMe);
 
 // Email verification
 router.get('/verify-email', verifyEmail);

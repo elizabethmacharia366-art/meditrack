@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
   // Calls the backend; if "role" is "admin", uses /auth/admin-login.
   const login = async ({ email, password, role }) => {
     const fn = role === "admin" ? apiAdminLogin : apiLogin;
-    const { data } = await fn({ email, password });
+    const { data } = await fn({ email, password, role });
     const nextUser = { id: data.id, name: data.name, email: data.email, role: data.role };
     setUser(nextUser);
     persist(nextUser, data.token);

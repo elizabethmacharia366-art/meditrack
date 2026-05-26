@@ -1,10 +1,14 @@
 const Doctor = require('../models/Doctors');
+const User = require('../models/User');
 const Appointment = require('../models/Appointments');
 const Prescription = require('../models/Prescriptions');
 
 const pickDoctorFields = (body) => {
   const { fullName, specialty, contact, hospitalId, schedule } = body;
-  return { fullName, specialty, contact, hospitalId, schedule };
+  return Object.fromEntries(
+    Object.entries({ fullName, specialty, contact, hospitalId, schedule })
+      .filter(([, value]) => value !== undefined),
+  );
 };
 
 // Public-ish: any authenticated user can browse the doctor directory.
@@ -64,6 +68,9 @@ exports.updateDoctor = async (req, res, next) => {
 
     Object.assign(existing, pickDoctorFields(req.body));
     await existing.save();
+    if (req.body.fullName && existing.userId) {
+      await User.findByIdAndUpdate(existing.userId, { name: req.body.fullName.trim() });
+    }
     const populated = await Doctor.findById(existing._id).populate('hospitalId');
     res.json(populated);
   } catch (err) {

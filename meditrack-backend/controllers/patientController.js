@@ -1,12 +1,16 @@
 const Patient = require('../models/Patients');
 const Doctor = require('../models/Doctors');
+const User = require('../models/User');
 const Appointment = require('../models/Appointments');
 const Prescription = require('../models/Prescriptions');
 
 // Pick only safe fields out of req.body.
 const pickPatientFields = (body) => {
   const { fullName, age, gender, contact, bloodGroup, medicalHistory } = body;
-  return { fullName, age, gender, contact, bloodGroup, medicalHistory };
+  return Object.fromEntries(
+    Object.entries({ fullName, age, gender, contact, bloodGroup, medicalHistory })
+      .filter(([, value]) => value !== undefined),
+  );
 };
 
 // Admin & doctors can list. Patients can only see themselves via /me.
@@ -66,6 +70,9 @@ exports.updatePatient = async (req, res, next) => {
 
     Object.assign(existing, pickPatientFields(req.body));
     await existing.save();
+    if (req.body.fullName && existing.userId) {
+      await User.findByIdAndUpdate(existing.userId, { name: req.body.fullName.trim() });
+    }
     res.json(existing);
   } catch (err) {
     next(err);

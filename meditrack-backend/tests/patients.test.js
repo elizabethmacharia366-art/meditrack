@@ -2,6 +2,7 @@ const {
   startDB, stopDB, clearDB, buildApp, request, registerUser, adminLogin, auth,
 } = require('./setup');
 const Patient = require('../models/Patients');
+const User = require('../models/User');
 
 let app;
 let adminToken;
@@ -68,6 +69,8 @@ describe('Patients', () => {
       .send({ fullName: 'Jane Doe Updated', age: 30 });
     expect(updated.status).toBe(200);
     expect(updated.body.fullName).toBe('Jane Doe Updated');
+    const syncedUser = await User.findById(patientUser.id);
+    expect(syncedUser.name).toBe('Jane Doe Updated');
 
     const other = await Patient.create({ fullName: 'Other Patient' });
     const denied = await request(app)

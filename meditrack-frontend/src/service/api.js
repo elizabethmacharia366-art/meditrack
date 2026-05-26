@@ -47,6 +47,7 @@ export const register = (data) => API.post('/auth/register', data);
 export const login = (data) => API.post('/auth/login', data);
 export const adminLogin = (data) => API.post('/auth/admin-login', data);
 export const me = () => API.get('/auth/me');
+export const updateMe = (data) => API.put('/auth/me', data);
 export const verifyEmail = (token) => API.post('/auth/verify-email', { token });
 export const resendVerification = (email) => API.post('/auth/resend-verification', { email });
 export const getMyPatient = () => API.get('/patients/me');

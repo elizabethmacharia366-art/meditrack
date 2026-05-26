@@ -67,6 +67,8 @@ userSchema.methods.toSafeJSON = function () {
     provider: this.provider,
     status: this.status,
     emailVerified: this.emailVerified,
+    createdAt: this.createdAt,
+    updatedAt: this.updatedAt,
   };
 };
 
