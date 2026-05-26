@@ -1,4 +1,5 @@
 const { startDB, stopDB, clearDB, buildApp, request, auth, adminLogin } = require('./setup');
+const User = require('../models/User');
 
 let app;
 
@@ -32,6 +33,20 @@ describe('Auth', () => {
     expect(res.body.emailVerified).toBe(true);
     expect(res.body.verificationLink).toBeUndefined();
     expect(res.body.email).toBe('jane@example.com');
+  });
+
+  test('patient users default to pending when no status is supplied', async () => {
+    const patient = await User.create({
+      name: 'Default Pending',
+      email: 'default-pending@example.com',
+      password: 'password123',
+      role: 'patient',
+      provider: 'email',
+    });
+
+    expect(patient.status).toBe('pending');
+    expect(patient.approvedAt).toBeUndefined();
+    expect(patient.approvedBy).toBeUndefined();
   });
 
   test('POST /api/auth/register rejects role=admin', async () => {

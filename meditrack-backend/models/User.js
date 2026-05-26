@@ -28,7 +28,9 @@ const userSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
-    default: 'approved',
+    default: function () {
+      return this.role === 'admin' ? 'approved' : 'pending';
+    },
   },
   rejectionReason: { type: String, trim: true },
   approvedAt: { type: Date },
