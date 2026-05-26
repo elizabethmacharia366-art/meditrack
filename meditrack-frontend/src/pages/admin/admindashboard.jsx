@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Bar, Line, Doughnut } from "react-chartjs-2";
+import WelcomeBanner from "../../components/welcomebanner";
 import {
   Chart as ChartJS,
   Title,
@@ -53,6 +54,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
+      <WelcomeBanner subtitle="System overview and management tools." />
       <h1 className="text-3xl font-bold text-blue-700 mb-6">Admin Dashboard</h1>
 
       {/* KPI Cards */}
