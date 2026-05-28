@@ -13,7 +13,6 @@ export default function Register() {
     location: "",
   });
   const [error, setError] = useState("");
-  const [info, setInfo] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -42,17 +41,19 @@ export default function Register() {
     try {
       setSubmitting(true);
       const u = await register(formData);
-      if (u?.pending) {
-        setInfo({
-          message:
-            u.message ||
-            "Your account has been created. Please wait for approval from the admin before signing in.",
-        });
-        setSubmitting(false);
-        return;
-      }
+      const infoMessage =
+        u?.message ||
+        "Registration successful. Please log in with your new account.";
       sessionStorage.setItem("greet", "new");
-      navigate(getRoleHomePath(u.role), { replace: true });
+      navigate("/login", {
+        replace: true,
+        state: {
+          email: formData.email,
+          role: formData.role,
+          info: infoMessage,
+          infoKind: u?.pending ? "pending" : "success",
+        },
+      });
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed");
       setSubmitting(false);
@@ -142,18 +143,12 @@ export default function Register() {
             </div>
           )}
 
-          {info && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded p-3 text-sm">
-              <div className="font-medium">{info.message}</div>
-            </div>
-          )}
-
           <button
             type="submit"
-            disabled={submitting || !!info}
+            disabled={submitting}
             className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold py-2 rounded-lg shadow-md transition"
           >
-            {submitting ? "Creating..." : info ? "Done" : "Sign Up"}
+            {submitting ? "Creating..." : "Sign Up"}
           </button>
         </form>
       </div>

@@ -11,8 +11,9 @@ export default function Login() {
     password: "",
     role: location.state?.role || "",
   });
-  const [error, setError] = useState(location.state?.info || "");
-  const [errorKind, setErrorKind] = useState(location.state?.info ? "pending" : "");
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState(location.state?.info || "");
+  const [infoKind, setInfoKind] = useState(location.state?.infoKind || "success");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -29,7 +30,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setErrorKind("");
+    setInfo("");
     if (!formData.email || !formData.password || !formData.role) {
       setError("Email, password and role are required.");
       return;
@@ -92,15 +93,20 @@ export default function Login() {
             </select>
           </div>
 
-          {error && (
+          {info && (
             <div
               className={
                 "text-sm rounded p-3 border " +
-                (errorKind === "pending"
+                (infoKind === "pending"
                   ? "bg-yellow-50 border-yellow-200 text-yellow-800"
-                  : "bg-red-50 border-red-200 text-red-600")
+                  : "bg-green-50 border-green-200 text-green-700")
               }
             >
+              {info}
+            </div>
+          )}
+          {error && (
+            <div className="text-sm rounded p-3 border bg-red-50 border-red-200 text-red-600">
               {error}
             </div>
           )}

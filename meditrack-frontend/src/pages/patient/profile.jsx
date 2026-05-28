@@ -98,6 +98,38 @@ export default function PatientProfile() {
         </div>
       )}
 
+      {!loading && profile && (
+        <div className="mb-6 bg-white shadow rounded-lg p-5">
+          <h2 className="text-lg font-semibold mb-4">Saved profile details</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+            <div>
+              <div className="font-medium">Full name</div>
+              <div>{profile.fullName || "—"}</div>
+            </div>
+            <div>
+              <div className="font-medium">Age</div>
+              <div>{profile.age ?? "—"}</div>
+            </div>
+            <div>
+              <div className="font-medium">Gender</div>
+              <div>{profile.gender || "—"}</div>
+            </div>
+            <div>
+              <div className="font-medium">Blood group</div>
+              <div>{profile.bloodGroup || "—"}</div>
+            </div>
+            <div className="sm:col-span-2">
+              <div className="font-medium">Contact</div>
+              <div>{profile.contact || "—"}</div>
+            </div>
+            <div className="sm:col-span-2">
+              <div className="font-medium">Medical history</div>
+              <div>{Array.isArray(profile.medicalHistory) ? profile.medicalHistory.join(", ") || "—" : profile.medicalHistory || "—"}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-gray-500">Loading…</p>
       ) : (

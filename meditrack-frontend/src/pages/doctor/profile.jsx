@@ -123,6 +123,34 @@ export default function DoctorProfile() {
         </div>
       )}
 
+      {!loading && profile && (
+        <div className="mb-6 bg-white shadow rounded-lg p-5">
+          <h2 className="text-lg font-semibold mb-4">Saved profile details</h2>
+          <div className="grid grid-cols-1 gap-3 text-sm text-gray-700">
+            <div>
+              <div className="font-medium">Full name</div>
+              <div>{profile.fullName || "—"}</div>
+            </div>
+            <div>
+              <div className="font-medium">Specialty</div>
+              <div>{profile.specialty || "—"}</div>
+            </div>
+            <div>
+              <div className="font-medium">Contact</div>
+              <div>{profile.contact || "—"}</div>
+            </div>
+            <div>
+              <div className="font-medium">Hospital</div>
+              <div>{profile.hospitalId?.name || profile.hospitalId || "—"}</div>
+            </div>
+            <div>
+              <div className="font-medium">Schedule</div>
+              <div className="whitespace-pre-wrap">{scheduleToText(profile.schedule) || "—"}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-gray-500">Loading...</p>
       ) : (
