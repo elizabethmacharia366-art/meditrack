@@ -36,15 +36,6 @@ export default function DoctorDashboard() {
           <h2 className="text-lg font-semibold">Workflow Board</h2>
           <p className="text-gray-600">Waiting → In Treatment → Discharged.</p>
         </Link>
-        <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-lg font-semibold">Lab Results</h2>
-          <ul className="mt-3 space-y-2 text-gray-600 text-sm list-disc list-inside">
-            <li>View reports linked to your assigned patients.</li>
-            <li>Download PDFs, images, and scans for offline review.</li>
-            <li>See integrated charts like blood sugar and hemoglobin trends.</li>
-            <li>Abnormal values are auto-flagged for quick attention.</li>
-          </ul>
-        </div>
       </div>
     </div>
   );

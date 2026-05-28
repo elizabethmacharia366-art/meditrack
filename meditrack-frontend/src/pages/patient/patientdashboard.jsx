@@ -17,16 +17,6 @@ export default function PatientDashboard() {
           <h2 className="mt-3 text-2xl font-bold text-green-700">Downloadable reports</h2>
           <p className="mt-2 text-gray-600">Access all lab results from your care team, including PDF scans, images, and charts.</p>
         </Link>
-        <div className="grid grid-cols-1 gap-4">
-          <div className="bg-white rounded-xl shadow p-5">
-            <div className="font-semibold text-gray-800">Doctor access</div>
-            <p className="mt-2 text-gray-600">Doctors can view all lab results linked to their assigned patients, keeping care aligned.</p>
-          </div>
-          <div className="bg-white rounded-xl shadow p-5">
-            <div className="font-semibold text-gray-800">Automatic alerts</div>
-            <p className="mt-2 text-gray-600">Abnormal values are flagged automatically so you and your doctor can take quick action.</p>
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
