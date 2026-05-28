@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getPatientHistory } from "../../service/api";
+import { getPatientHistory, getPatientLabResults } from "../../service/api";
 
 const fmt = (d) => {
   if (!d) return "—";
@@ -23,8 +23,11 @@ const statusBadge = (status) => {
 export default function DoctorPatientDetail() {
   const { id } = useParams();
   const [data, setData] = useState(null);
+  const [labResults, setLabResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [labLoading, setLabLoading] = useState(true);
   const [error, setError] = useState("");
+  const [labError, setLabError] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -37,6 +40,27 @@ export default function DoctorPatientDetail() {
         if (alive) setError(err.response?.data?.error || "Failed to load patient");
       } finally {
         if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        setLabLoading(true);
+        const res = await getPatientLabResults(id);
+        if (!alive) return;
+        setLabResults(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        if (!alive) return;
+        setLabError(err.response?.data?.error || "Failed to load lab results");
+      } finally {
+        if (!alive) return;
+        setLabLoading(false);
       }
     })();
     return () => {
@@ -116,38 +140,46 @@ export default function DoctorPatientDetail() {
               <p className="text-sm text-gray-500">Quick view of the most recent patient lab activity.</p>
             </div>
             <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1">
-              3 results
+              {labLoading ? "Loading…" : `${labResults.length} results`}
             </span>
           </div>
-          <div className="space-y-4">
-            <div className="border rounded-xl p-4 bg-slate-50">
-              <div className="flex justify-between items-center gap-3">
-                <div>
-                  <div className="font-semibold">Complete blood count</div>
-                  <div className="text-sm text-gray-600">Critical hemoglobin level flagged</div>
-                </div>
-                <button className="text-sm text-blue-600 hover:underline">Download</button>
-              </div>
+          {labLoading ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">Loading lab results…</div>
+          ) : labError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{labError}</div>
+          ) : labResults.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+              No lab results available for this patient yet.
             </div>
-            <div className="border rounded-xl p-4 bg-slate-50">
-              <div className="flex justify-between items-center gap-3">
-                <div>
-                  <div className="font-semibold">Lipid panel</div>
-                  <div className="text-sm text-gray-600">Review cardiovascular risk markers</div>
+          ) : (
+            <div className="space-y-4">
+              {labResults.map((result) => (
+                <div key={result._id || result.id} className="border rounded-xl p-4 bg-slate-50">
+                  <div className="flex justify-between items-center gap-3">
+                    <div>
+                      <div className="font-semibold">{result.type || "Lab result"}</div>
+                      <div className="text-sm text-gray-600">{result.summary || "No summary available"}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-slate-700">{fmt(result.date)}</span>
+                      {result.fileUrl ? (
+                        <a
+                          href={result.fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-blue-600 hover:underline"
+                        >
+                          Download
+                        </a>
+                      ) : (
+                        <span className="text-sm text-slate-500">No file</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <button className="text-sm text-blue-600 hover:underline">Download</button>
-              </div>
+              ))}
             </div>
-            <div className="border rounded-xl p-4 bg-slate-50">
-              <div className="flex justify-between items-center gap-3">
-                <div>
-                  <div className="font-semibold">Thyroid function test</div>
-                  <div className="text-sm text-gray-600">Normal range confirmed</div>
-                </div>
-                <button className="text-sm text-blue-600 hover:underline">Download</button>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
         <div className="bg-white shadow rounded-lg p-5">
           <h2 className="text-xl font-semibold mb-3">Alerts for this patient</h2>

@@ -3,6 +3,7 @@ const Doctor = require('../models/Doctors');
 const User = require('../models/User');
 const Appointment = require('../models/Appointments');
 const Prescription = require('../models/Prescriptions');
+const LabResult = require('../models/LabResults');
 
 // Pick only safe fields out of req.body.
 const pickPatientFields = (body) => {
@@ -92,8 +93,107 @@ exports.deletePatient = async (req, res, next) => {
     // Cascade: clean up dependent records.
     await Appointment.deleteMany({ patientId: patient._id });
     await Prescription.deleteMany({ patientId: patient._id });
+    await LabResult.deleteMany({ patientId: patient._id });
 
     res.json({ message: 'Patient deleted' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getMyLabResults = async (req, res, next) => {
+  try {
+    let patient = await Patient.findOne({ userId: req.user.id });
+    if (!patient) {
+      patient = await Patient.create({ userId: req.user.id, fullName: req.user.name || 'Patient' });
+    }
+
+    const labResults = await LabResult.find({ patientId: patient._id })
+      .populate('doctorId', 'fullName specialty')
+      .populate('hospitalId', 'name')
+      .sort({ date: -1 });
+
+    res.json(labResults);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getPatientLabResults = async (req, res, next) => {
+  try {
+    const patient = await Patient.findById(req.params.id);
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    if (req.user.role === 'patient' && String(patient.userId || patient.userId) !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    if (req.user.role === 'doctor') {
+      const doctor = await Doctor.findOne({ userId: req.user.id }).select('_id');
+      if (!doctor) return res.status(403).json({ error: 'No doctor profile found' });
+    }
+
+    const labResults = await LabResult.find({ patientId: patient._id })
+      .populate('doctorId', 'fullName specialty')
+      .populate('hospitalId', 'name')
+      .sort({ date: -1 });
+
+    res.json(labResults);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const pickLabResultFields = (body) => {
+  const {
+    type,
+    date,
+    summary,
+    abnormal,
+    status,
+    fileUrl,
+    hospitalId,
+    details,
+  } = body;
+
+  return Object.fromEntries(
+    Object.entries({ type, date, summary, abnormal, status, fileUrl, hospitalId, details })
+      .filter(([, value]) => value !== undefined),
+  );
+};
+
+exports.createLabResult = async (req, res, next) => {
+  try {
+    const patient = await Patient.findById(req.params.id);
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    const doctor = req.user.role === 'doctor'
+      ? await Doctor.findOne({ userId: req.user.id }).select('_id')
+      : null;
+    if (req.user.role === 'doctor' && !doctor) {
+      return res.status(403).json({ error: 'Doctor profile required to create lab results' });
+    }
+
+    const payload = pickLabResultFields(req.body);
+    if (!payload.type) {
+      return res.status(400).json({ error: 'Lab result type is required' });
+    }
+
+    const labResult = new LabResult({
+      patientId: patient._id,
+      doctorId: doctor?._id,
+      hospitalId: payload.hospitalId,
+      type: payload.type,
+      date: payload.date ? new Date(payload.date) : undefined,
+      summary: payload.summary,
+      abnormal: payload.abnormal,
+      status: payload.status,
+      fileUrl: payload.fileUrl,
+      details: payload.details,
+    });
+
+    await labResult.save();
+    res.status(201).json(labResult);
   } catch (err) {
     next(err);
   }

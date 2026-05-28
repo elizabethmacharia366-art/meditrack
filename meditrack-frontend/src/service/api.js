@@ -51,6 +51,9 @@ export const me = () => API.get('/auth/me');
 export const updateMe = (data) => API.put('/auth/me', data);
 export const getMyPatient = () => API.get('/patients/me');
 export const updateMyPatient = (id, data) => API.put(`/patients/${id}`, data);
+export const getMyLabResults = () => API.get('/patients/me/labs');
+export const getPatientLabResults = (id) => API.get(`/patients/${id}/labs`);
+export const createLabResult = (patientId, data) => API.post(`/patients/${patientId}/labs`, data);
 
 // Admin approval & invites
 export const adminListUsers = (params) => API.get('/admin/users', { params });

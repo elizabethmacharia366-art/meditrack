@@ -1,35 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getMyPatient, updateMyPatient } from "../../service/api";
+import { getMyPatient, getMyLabResults, updateMyPatient } from "../../service/api";
 
 const GENDERS = ["", "Male", "Female", "Other"];
 const BLOOD_GROUPS = ["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-const SAMPLE_LAB_RESULTS = [
-  {
-    id: "lab-1",
-    title: "Complete blood count",
-    summary: "Hemoglobin slightly low, white blood cells stable.",
-    status: "Ready",
-    date: "Jun 5, 2026",
-  },
-  {
-    id: "lab-2",
-    title: "Lipid panel",
-    summary: "Cholesterol trending upward; doctor review recommended.",
-    status: "Ready",
-    date: "Jun 1, 2026",
-  },
-  {
-    id: "lab-3",
-    title: "Thyroid function",
-    summary: "TSH normal, no follow-up required.",
-    status: "Ready",
-    date: "May 28, 2026",
-  },
-];
 
 export default function PatientProfile() {
   const [profile, setProfile] = useState(null);
+  const [labResults, setLabResults] = useState([]);
+  const [labLoading, setLabLoading] = useState(true);
   const [form, setForm] = useState({
     fullName: "",
     age: "",
@@ -49,9 +28,21 @@ export default function PatientProfile() {
     (async () => {
       try {
         setLoading(true);
-        const { data } = await getMyPatient();
+        setLabLoading(true);
+        const [profileResponse, labResponse] = await Promise.all([getMyPatient(), getMyLabResults()]);
         if (!alive) return;
+        const data = profileResponse.data;
+        const labs = Array.isArray(labResponse.data) ? labResponse.data : [];
         setProfile(data);
+        setLabResults(labs.map((item) => ({
+          id: item._id || item.id,
+          title: item.type || "Lab result",
+          summary: item.summary || "No summary available",
+          status: item.status || "Completed",
+          date: item.date ? new Date(item.date).toLocaleDateString() : "Unknown",
+          fileUrl: item.fileUrl,
+          abnormal: item.abnormal,
+        })));
         setForm({
           fullName: data?.fullName || "",
           age: data?.age ?? "",
@@ -63,9 +54,12 @@ export default function PatientProfile() {
             : "",
         });
       } catch (err) {
-        if (alive) setError(err.response?.data?.error || "Failed to load profile");
+        if (!alive) setError(err.response?.data?.error || "Failed to load profile");
       } finally {
-        if (alive) setLoading(false);
+        if (alive) {
+          setLoading(false);
+          setLabLoading(false);
+        }
       }
     })();
     return () => {
@@ -153,32 +147,54 @@ export default function PatientProfile() {
       {loading ? (
         <p className="text-gray-500">Loading…</p>
       ) : activeTab === "lab-results" ? (
-        <div className="space-y-4">
-          {SAMPLE_LAB_RESULTS.map((result) => (
-            <div key={result.id} className="bg-white shadow rounded-xl p-5">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">{result.title}</h2>
-                  <p className="text-sm text-gray-600 mt-1">{result.summary}</p>
+        labLoading ? (
+          <p className="text-gray-500">Loading lab results…</p>
+        ) : labResults.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-700">
+            <div className="text-2xl font-semibold">No lab results yet</div>
+            <p className="mt-3 text-gray-600">
+              You have not received any lab test results yet. Check back after your next appointment.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {labResults.map((result) => (
+              <div key={result.id} className="bg-white shadow rounded-xl p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">{result.title}</h2>
+                    <p className="text-sm text-gray-600 mt-1">{result.summary}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs uppercase font-semibold tracking-wide text-slate-600 bg-slate-100 rounded-full px-3 py-1">
+                      {result.status}
+                    </span>
+                    <span className="text-sm text-gray-500">{result.date}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs uppercase font-semibold tracking-wide text-slate-600 bg-slate-100 rounded-full px-3 py-1">
-                    {result.status}
-                  </span>
-                  <span className="text-sm text-gray-500">{result.date}</span>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {result.fileUrl ? (
+                    <a
+                      href={result.fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700"
+                    >
+                      Download report
+                    </a>
+                  ) : (
+                    <button className="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm" disabled>
+                      No report available
+                    </button>
+                  )}
+                  <button className="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+                    Ask your doctor
+                  </button>
                 </div>
               </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700">
-                  Download report
-                </button>
-                <button className="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
-                  Ask your doctor
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       ) : (
         <>
           {profile && (

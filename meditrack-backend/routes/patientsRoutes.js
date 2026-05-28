@@ -22,6 +22,7 @@ router.use(requireAuth);
  *       404: { $ref: '#/components/responses/NotFound' }
  */
 router.get('/me', requireRole('patient'), controller.getMyPatient);
+router.get('/me/labs', requireRole('patient'), controller.getMyLabResults);
 
 /**
  * @openapi
@@ -72,6 +73,8 @@ router.post('/', requireRole('admin'), controller.createPatient);
  *       403: { $ref: '#/components/responses/Forbidden' }
  *       404: { $ref: '#/components/responses/NotFound' }
  */
+router.get('/:id/labs', controller.getPatientLabResults);
+router.post('/:id/labs', requireRole('doctor', 'admin'), controller.createLabResult);
 router.get('/:id/history', controller.getPatientHistory);
 
 /**
