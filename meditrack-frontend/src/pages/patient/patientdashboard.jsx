@@ -46,6 +46,14 @@ export default function PatientDashboard() {
           <h2 className="text-lg font-semibold">My History</h2>
           <p className="text-gray-600">Past appointments and prescriptions.</p>
         </Link>
+        <Link to="/patient/lab-results" className="bg-white shadow-md rounded-lg p-4 hover:bg-blue-50">
+          <h2 className="text-lg font-semibold">Lab Results</h2>
+          <p className="text-gray-600">Review your latest tests and reports.</p>
+        </Link>
+        <Link to="/patient/notifications" className="bg-white shadow-md rounded-lg p-4 hover:bg-blue-50">
+          <h2 className="text-lg font-semibold">Notifications</h2>
+          <p className="text-gray-600">See alerts for new results and appointment updates.</p>
+        </Link>
         <Link to="/patient/hospitals" className="bg-white shadow-md rounded-lg p-4 hover:bg-blue-50">
           <h2 className="text-lg font-semibold">Hospitals</h2>
           <p className="text-gray-600">Browse hospitals and available doctors.</p>

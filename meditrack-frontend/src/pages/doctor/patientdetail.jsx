@@ -108,6 +108,62 @@ export default function DoctorPatientDetail() {
         )}
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="bg-white shadow rounded-lg p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold">Latest lab results</h2>
+              <p className="text-sm text-gray-500">Quick view of the most recent patient lab activity.</p>
+            </div>
+            <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1">
+              3 results
+            </span>
+          </div>
+          <div className="space-y-4">
+            <div className="border rounded-xl p-4 bg-slate-50">
+              <div className="flex justify-between items-center gap-3">
+                <div>
+                  <div className="font-semibold">Complete blood count</div>
+                  <div className="text-sm text-gray-600">Critical hemoglobin level flagged</div>
+                </div>
+                <button className="text-sm text-blue-600 hover:underline">Download</button>
+              </div>
+            </div>
+            <div className="border rounded-xl p-4 bg-slate-50">
+              <div className="flex justify-between items-center gap-3">
+                <div>
+                  <div className="font-semibold">Lipid panel</div>
+                  <div className="text-sm text-gray-600">Review cardiovascular risk markers</div>
+                </div>
+                <button className="text-sm text-blue-600 hover:underline">Download</button>
+              </div>
+            </div>
+            <div className="border rounded-xl p-4 bg-slate-50">
+              <div className="flex justify-between items-center gap-3">
+                <div>
+                  <div className="font-semibold">Thyroid function test</div>
+                  <div className="text-sm text-gray-600">Normal range confirmed</div>
+                </div>
+                <button className="text-sm text-blue-600 hover:underline">Download</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white shadow rounded-lg p-5">
+          <h2 className="text-xl font-semibold mb-3">Alerts for this patient</h2>
+          <div className="space-y-3">
+            <div className="rounded-xl border border-red-100 bg-red-50 p-4">
+              <p className="font-semibold text-red-700">Potassium level high — review required</p>
+              <p className="text-sm text-red-600 mt-1">Patient needs medication adjustment and lab repeat.</p>
+            </div>
+            <div className="rounded-xl border border-orange-100 bg-orange-50 p-4">
+              <p className="font-semibold text-orange-700">Elevated glucose detected</p>
+              <p className="text-sm text-orange-600 mt-1">Consider follow-up diabetes assessment.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <h2 className="text-lg font-semibold mb-3">Consultation history (with you)</h2>
 
       {timeline.length === 0 && (

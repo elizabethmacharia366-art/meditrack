@@ -15,6 +15,8 @@ import DoctorPatientDetail from "./pages/doctor/patientdetail";
 import Prescriptions from "./pages/doctor/prescription";
 import Appointments from "./pages/doctor/appointments";
 import DoctorProfile from "./pages/doctor/profile";
+import DoctorClinicalDashboard from "./pages/doctor/clinicaldashboard";
+import DoctorAlerts from "./pages/doctor/alerts";
 
 import PatientDashboard from "./pages/patient/patientdashboard";
 import ViewPrescriptions from "./pages/patient/viewprescriptions";
@@ -23,6 +25,7 @@ import Hospitals from "./pages/patient/hospitals";
 import PatientHistory from "./pages/patient/history";
 import PatientProfile from "./pages/patient/profile";
 import PatientLabResults from "./pages/patient/labresults";
+import PatientNotifications from "./pages/patient/notifications";
 import PatientFAQ from "./pages/patient/faq";
 
 import HospitalList from "./pages/hospital/hospitallist";
@@ -144,6 +147,22 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/doctor/clinical-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["doctor"]}>
+              <DoctorClinicalDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/doctor/alerts"
+          element={
+            <ProtectedRoute allowedRoles={["doctor"]}>
+              <DoctorAlerts />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/patient"
@@ -166,6 +185,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["patient"]}>
               <PatientLabResults />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/patient/notifications"
+          element={
+            <ProtectedRoute allowedRoles={["patient"]}>
+              <PatientNotifications />
             </ProtectedRoute>
           }
         />

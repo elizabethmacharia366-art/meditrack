@@ -27,6 +27,23 @@ const emptyForm = {
   autoAssign: true,
 };
 
+const UPCOMING_LABS = [
+  {
+    id: "lab1",
+    test: "Complete Blood Count",
+    date: "Jun 14, 2026",
+    location: "Central City Hospital",
+    status: "Scheduled",
+  },
+  {
+    id: "lab2",
+    test: "Lipid Panel",
+    date: "Jun 18, 2026",
+    location: "Eastside Diagnostic Center",
+    status: "Confirmed",
+  },
+];
+
 export default function BookAppointment() {
   const navigate = useNavigate();
   const [doctors, setDoctors] = useState([]);
@@ -174,6 +191,30 @@ export default function BookAppointment() {
           {success}
         </div>
       )}
+
+      <div className="bg-white rounded-lg shadow p-5 mb-6">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">Upcoming lab tests</h2>
+            <p className="text-gray-600">Keep track of your scheduled lab work and locations.</p>
+          </div>
+          <Link to="/patient/lab-results" className="text-blue-600 hover:underline text-sm">
+            View all results
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {UPCOMING_LABS.map((lab) => (
+            <div key={lab.id} className="border rounded-xl p-4 bg-slate-50">
+              <div className="font-semibold text-slate-900">{lab.test}</div>
+              <div className="text-sm text-gray-600 mt-1">{lab.date}</div>
+              <div className="text-sm text-gray-600">{lab.location}</div>
+              <div className="inline-flex items-center mt-3 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1">
+                {lab.status}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <form
         onSubmit={handleSubmit}

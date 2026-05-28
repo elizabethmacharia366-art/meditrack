@@ -4,6 +4,29 @@ import { getMyPatient, updateMyPatient } from "../../service/api";
 
 const GENDERS = ["", "Male", "Female", "Other"];
 const BLOOD_GROUPS = ["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const SAMPLE_LAB_RESULTS = [
+  {
+    id: "lab-1",
+    title: "Complete blood count",
+    summary: "Hemoglobin slightly low, white blood cells stable.",
+    status: "Ready",
+    date: "Jun 5, 2026",
+  },
+  {
+    id: "lab-2",
+    title: "Lipid panel",
+    summary: "Cholesterol trending upward; doctor review recommended.",
+    status: "Ready",
+    date: "Jun 1, 2026",
+  },
+  {
+    id: "lab-3",
+    title: "Thyroid function",
+    summary: "TSH normal, no follow-up required.",
+    status: "Ready",
+    date: "May 28, 2026",
+  },
+];
 
 export default function PatientProfile() {
   const [profile, setProfile] = useState(null);
@@ -15,6 +38,7 @@ export default function PatientProfile() {
     bloodGroup: "",
     medicalHistory: "",
   });
+  const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -79,9 +103,12 @@ export default function PatientProfile() {
   };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">My Profile</h1>
+    <div className="p-6 max-w-3xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">My Profile</h1>
+          <p className="text-gray-500 mt-1">Access your personal details and lab result history.</p>
+        </div>
         <Link to="/patient" className="text-blue-600 hover:underline text-sm">
           ← Back to dashboard
         </Link>
@@ -98,123 +125,185 @@ export default function PatientProfile() {
         </div>
       )}
 
-      {!loading && profile && (
-        <div className="mb-6 bg-white shadow rounded-lg p-5">
-          <h2 className="text-lg font-semibold mb-4">Saved profile details</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
-            <div>
-              <div className="font-medium">Full name</div>
-              <div>{profile.fullName || "—"}</div>
-            </div>
-            <div>
-              <div className="font-medium">Age</div>
-              <div>{profile.age ?? "—"}</div>
-            </div>
-            <div>
-              <div className="font-medium">Gender</div>
-              <div>{profile.gender || "—"}</div>
-            </div>
-            <div>
-              <div className="font-medium">Blood group</div>
-              <div>{profile.bloodGroup || "—"}</div>
-            </div>
-            <div className="sm:col-span-2">
-              <div className="font-medium">Contact</div>
-              <div>{profile.contact || "—"}</div>
-            </div>
-            <div className="sm:col-span-2">
-              <div className="font-medium">Medical history</div>
-              <div>{Array.isArray(profile.medicalHistory) ? profile.medicalHistory.join(", ") || "—" : profile.medicalHistory || "—"}</div>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="flex gap-2 mb-6">
+        <button
+          type="button"
+          onClick={() => setActiveTab("profile")}
+          className={`px-4 py-2 rounded-full font-semibold ${
+            activeTab === "profile"
+              ? "bg-blue-600 text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+          }`}
+        >
+          Profile
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("lab-results")}
+          className={`px-4 py-2 rounded-full font-semibold ${
+            activeTab === "lab-results"
+              ? "bg-blue-600 text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+          }`}
+        >
+          Lab Results
+        </button>
+      </div>
 
       {loading ? (
         <p className="text-gray-500">Loading…</p>
+      ) : activeTab === "lab-results" ? (
+        <div className="space-y-4">
+          {SAMPLE_LAB_RESULTS.map((result) => (
+            <div key={result.id} className="bg-white shadow rounded-xl p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">{result.title}</h2>
+                  <p className="text-sm text-gray-600 mt-1">{result.summary}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs uppercase font-semibold tracking-wide text-slate-600 bg-slate-100 rounded-full px-3 py-1">
+                    {result.status}
+                  </span>
+                  <span className="text-sm text-gray-500">{result.date}</span>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700">
+                  Download report
+                </button>
+                <button className="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm hover:bg-slate-200">
+                  Ask your doctor
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
-        <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full name</label>
-            <input
-              type="text"
-              value={form.fullName}
-              onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-              className="border rounded-lg w-full px-3 py-2"
-              required
-            />
-          </div>
+        <>
+          {profile && (
+            <div className="mb-6 bg-white shadow rounded-lg p-5">
+              <h2 className="text-lg font-semibold mb-4">Saved profile details</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+                <div>
+                  <div className="font-medium">Full name</div>
+                  <div>{profile.fullName || "—"}</div>
+                </div>
+                <div>
+                  <div className="font-medium">Age</div>
+                  <div>{profile.age ?? "—"}</div>
+                </div>
+                <div>
+                  <div className="font-medium">Gender</div>
+                  <div>{profile.gender || "—"}</div>
+                </div>
+                <div>
+                  <div className="font-medium">Blood group</div>
+                  <div>{profile.bloodGroup || "—"}</div>
+                </div>
+                <div className="sm:col-span-2">
+                  <div className="font-medium">Contact</div>
+                  <div>{profile.contact || "—"}</div>
+                </div>
+                <div className="sm:col-span-2">
+                  <div className="font-medium">Medical history</div>
+                  <div>
+                    {Array.isArray(profile.medicalHistory)
+                      ? profile.medicalHistory.join(", ") || "—"
+                      : profile.medicalHistory || "—"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full name</label>
               <input
-                type="number"
-                min="0"
-                max="150"
-                value={form.age}
-                onChange={(e) => setForm({ ...form, age: e.target.value })}
+                type="text"
+                value={form.fullName}
+                onChange={(e) => setForm({ ...form, fullName: e.target.value })}
                 className="border rounded-lg w-full px-3 py-2"
+                required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-              <select
-                value={form.gender}
-                onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                className="border rounded-lg w-full px-3 py-2"
-              >
-                {GENDERS.map((g) => (
-                  <option key={g} value={g}>{g || "—"}</option>
-                ))}
-              </select>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="150"
+                  value={form.age}
+                  onChange={(e) => setForm({ ...form, age: e.target.value })}
+                  className="border rounded-lg w-full px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                <select
+                  value={form.gender}
+                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                  className="border rounded-lg w-full px-3 py-2"
+                >
+                  {GENDERS.map((g) => (
+                    <option key={g} value={g}>
+                      {g || "—"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Blood group</label>
+                <select
+                  value={form.bloodGroup}
+                  onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })}
+                  className="border rounded-lg w-full px-3 py-2"
+                >
+                  {BLOOD_GROUPS.map((b) => (
+                    <option key={b} value={b}>
+                      {b || "—"}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Blood group</label>
-              <select
-                value={form.bloodGroup}
-                onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Contact</label>
+              <input
+                type="text"
+                value={form.contact}
+                onChange={(e) => setForm({ ...form, contact: e.target.value })}
                 className="border rounded-lg w-full px-3 py-2"
-              >
-                {BLOOD_GROUPS.map((b) => (
-                  <option key={b} value={b}>{b || "—"}</option>
-                ))}
-              </select>
+                placeholder="Phone or email"
+              />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contact</label>
-            <input
-              type="text"
-              value={form.contact}
-              onChange={(e) => setForm({ ...form, contact: e.target.value })}
-              className="border rounded-lg w-full px-3 py-2"
-              placeholder="Phone or email"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Medical history (comma separated)
+              </label>
+              <textarea
+                value={form.medicalHistory}
+                onChange={(e) => setForm({ ...form, medicalHistory: e.target.value })}
+                rows={3}
+                className="border rounded-lg w-full px-3 py-2"
+                placeholder="e.g. Asthma, Diabetes"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Medical history (comma separated)
-            </label>
-            <textarea
-              value={form.medicalHistory}
-              onChange={(e) => setForm({ ...form, medicalHistory: e.target.value })}
-              rows={3}
-              className="border rounded-lg w-full px-3 py-2"
-              placeholder="e.g. Asthma, Diabetes"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold px-5 py-2 rounded-lg"
-          >
-            {saving ? "Saving…" : "Save changes"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold px-5 py-2 rounded-lg"
+            >
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          </form>
+        </>
       )}
     </div>
   );
