@@ -9,11 +9,14 @@ export default function PatientDashboard() {
       <h1 className="text-2xl font-bold mb-6">Patient Dashboard</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow p-5">
+        <Link
+          to="/patient/lab-results"
+          className="bg-white rounded-xl shadow p-5 hover:border-blue-400 border border-transparent transition"
+        >
           <div className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Lab results</div>
           <h2 className="mt-3 text-2xl font-bold text-green-700">Downloadable reports</h2>
           <p className="mt-2 text-gray-600">Access all lab results from your care team, including PDF scans, images, and charts.</p>
-        </div>
+        </Link>
         <div className="grid grid-cols-1 gap-4">
           <div className="bg-white rounded-xl shadow p-5">
             <div className="font-semibold text-gray-800">Doctor access</div>
