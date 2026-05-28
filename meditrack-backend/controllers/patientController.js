@@ -43,8 +43,10 @@ exports.getPatient = async (req, res, next) => {
 
 exports.getMyPatient = async (req, res, next) => {
   try {
-    const patient = await Patient.findOne({ userId: req.user.id });
-    if (!patient) return res.status(404).json({ error: 'Patient profile not found' });
+    let patient = await Patient.findOne({ userId: req.user.id });
+    if (!patient) {
+      patient = await Patient.create({ userId: req.user.id, fullName: req.user.name || 'Patient' });
+    }
     res.json(patient);
   } catch (err) {
     next(err);

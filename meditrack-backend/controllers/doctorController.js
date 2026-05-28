@@ -49,8 +49,11 @@ exports.getDoctor = async (req, res, next) => {
 
 exports.getMyDoctor = async (req, res, next) => {
   try {
-    const doctor = await Doctor.findOne({ userId: req.user.id }).populate('hospitalId');
-    if (!doctor) return res.status(404).json({ error: 'Doctor profile not found' });
+    let doctor = await Doctor.findOne({ userId: req.user.id }).populate('hospitalId');
+    if (!doctor) {
+      doctor = await Doctor.create({ userId: req.user.id, fullName: req.user.name || 'Doctor', contact: '' });
+      doctor = await Doctor.findById(doctor._id).populate('hospitalId');
+    }
     res.json(doctor);
   } catch (err) {
     next(err);
