@@ -117,7 +117,6 @@ export default function PendingUsers() {
                 <th className="p-3">Name</th>
                 <th className="p-3">Email</th>
                 <th className="p-3">Role</th>
-                <th className="p-3">Verified</th>
                 <th className="p-3">Created</th>
                 <th className="p-3">Actions</th>
               </tr>
@@ -128,13 +127,6 @@ export default function PendingUsers() {
                   <td className="p-3 font-medium">{u.name}</td>
                   <td className="p-3 text-gray-700">{u.email}</td>
                   <td className="p-3 capitalize">{u.role}</td>
-                  <td className="p-3">
-                    {u.emailVerified ? (
-                      <span className="text-green-700 text-xs font-semibold">Yes</span>
-                    ) : (
-                      <span className="text-yellow-700 text-xs font-semibold">No</span>
-                    )}
-                  </td>
                   <td className="p-3 text-gray-500">{fmt(u.createdAt)}</td>
                   <td className="p-3 space-x-2">
                     {tab !== "approved" && (

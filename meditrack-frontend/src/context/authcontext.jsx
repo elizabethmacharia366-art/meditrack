@@ -88,7 +88,6 @@ export const AuthProvider = ({ children }) => {
       return {
         pending: true,
         message: data.message,
-        verificationLink: data.verificationLink,
         ...data,
       };
     }
@@ -98,7 +97,7 @@ export const AuthProvider = ({ children }) => {
     const nextUser = { id: data.id, name: data.name, email: data.email, role: data.role };
     setUser(nextUser);
     persist(nextUser, data.token);
-    return { ...nextUser, verificationLink: data.verificationLink };
+    return nextUser;
   };
 
   const logout = () => {
