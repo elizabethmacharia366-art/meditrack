@@ -57,6 +57,7 @@ export const createLabResult = (patientId, data) => API.post(`/patients/${patien
 
 // Admin approval & invites
 export const adminListUsers = (params) => API.get('/admin/users', { params });
+export const adminCreateStaff = (data) => API.post('/admin/staff', data);
 export const adminApproveUser = (id) => API.post(`/admin/users/${id}/approve`);
 export const adminRejectUser = (id, reason) =>
   API.post(`/admin/users/${id}/reject`, { reason });

@@ -50,6 +50,41 @@ exports.rejectUser = async (req, res, next) => {
   }
 };
 
+exports.createStaff = async (req, res, next) => {
+  try {
+    const { name, email, password, role, department, ward } = req.body || {};
+    const allowedRoles = ['nurse', 'technician'];
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ error: 'Name, email, password, and role are required' });
+    }
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ error: 'Staff role must be nurse or technician' });
+    }
+
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const existing = await User.findOne({ email: normalizedEmail });
+    if (existing) return res.status(409).json({ error: 'Email already registered' });
+
+    const user = await User.create({
+      name,
+      email: normalizedEmail,
+      password,
+      role,
+      provider: 'email',
+      status: 'approved',
+      emailVerified: true,
+      department,
+      ward,
+      approvedAt: new Date(),
+      approvedBy: req.user.id,
+    });
+
+    res.status(201).json(user.toSafeJSON());
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.createAdmin = async (req, res, next) => {
   try {
     const { name = 'Admin', email, password } = req.body || {};

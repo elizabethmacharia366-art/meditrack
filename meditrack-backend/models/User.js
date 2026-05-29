@@ -20,7 +20,9 @@ const userSchema = new mongoose.Schema({
   },
   provider: { type: String, enum: ['email', 'google', 'other'], default: 'email' },
   providerId: { type: String },
-  role: { type: String, enum: ['patient', 'doctor', 'hospital', 'admin'], default: 'patient' },
+  role: { type: String, enum: ['patient', 'doctor', 'nurse', 'technician', 'hospital', 'admin'], default: 'patient' },
+  department: { type: String, trim: true },
+  ward: { type: String, trim: true },
 
   // Approval workflow.
   // - patient/doctor/hospital: 'pending' until an admin reviews and approves
@@ -68,6 +70,8 @@ userSchema.methods.toSafeJSON = function () {
     provider: this.provider,
     status: this.status,
     emailVerified: this.emailVerified,
+    department: this.department,
+    ward: this.ward,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };

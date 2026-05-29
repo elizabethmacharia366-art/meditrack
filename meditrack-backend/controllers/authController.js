@@ -8,7 +8,7 @@ const { JWT_SECRET } = require('../middleware/auth');
 
 const TOKEN_TTL = process.env.JWT_TTL || '7d';
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
-const SELF_REGISTER_ROLES = ['patient', 'doctor', 'hospital'];
+const SELF_REGISTER_ROLES = ['patient', 'doctor'];
 
 const signToken = (user) =>
   jwt.sign({ id: String(user._id), role: user.role }, JWT_SECRET, { expiresIn: TOKEN_TTL });

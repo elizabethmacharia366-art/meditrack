@@ -20,6 +20,9 @@ import DoctorAlerts from "./pages/doctor/alerts";
 
 import PatientDashboard from "./pages/patient/patientdashboard";
 import ViewPrescriptions from "./pages/patient/viewprescriptions";
+import ManageStaff from "./pages/admin/managestaff";
+import NurseDashboard from "./pages/nurse/nursedashboard";
+import TechnicianDashboard from "./pages/technician/techniciandashboard";
 import BookAppointment from "./pages/patient/bookappointment";
 import Hospitals from "./pages/patient/hospitals";
 import PatientHistory from "./pages/patient/history";
@@ -71,6 +74,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <ManageHospitals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/manage-staff"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <ManageStaff />
             </ProtectedRoute>
           }
         />
@@ -160,6 +171,23 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["doctor"]}>
               <DoctorAlerts />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/nurse"
+          element={
+            <ProtectedRoute allowedRoles={["nurse"]}>
+              <NurseDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/technician"
+          element={
+            <ProtectedRoute allowedRoles={["technician"]}>
+              <TechnicianDashboard />
             </ProtectedRoute>
           }
         />

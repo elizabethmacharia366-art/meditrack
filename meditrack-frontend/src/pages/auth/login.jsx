@@ -104,6 +104,8 @@ export default function Login() {
               <option value="">Select role</option>
               <option value="admin">Admin</option>
               <option value="doctor">Doctor</option>
+              <option value="nurse">Nurse</option>
+              <option value="technician">Technician</option>
               <option value="patient">Patient</option>
             </select>
           </div>
