@@ -1,41 +1,76 @@
 import React, { useEffect, useState } from "react";
 import { getTasks } from "../../service/api";
 
-const pendingLabTests = [
-  { patient: "Patient A", test: "CBC", due: "10:00" },
-  { patient: "Patient B", test: "Blood glucose", due: "11:30" },
-  { patient: "Patient C", test: "Urinalysis", due: "13:00" },
+const initialPendingLabTests = [
+  { id: "lab-1", patientId: "PAT-1001", testType: "Blood", priority: "Urgent", status: "Ordered" },
+  { id: "lab-2", patientId: "PAT-1005", testType: "Urine", priority: "Normal", status: "Awaiting sample" },
+  { id: "lab-3", patientId: "PAT-1010", testType: "Imaging", priority: "High", status: "Scheduled" },
 ];
 
-const qualityChecks = [
-  { item: "Defibrillator battery", status: "Pending" },
-  { item: "Infusion pump calibration", status: "In progress" },
-  { item: "Sterile tray inspection", status: "Complete" },
+const initialQualityChecks = [
+  { id: "qc-1", sample: "Blood tube", issue: "Incomplete label", status: "Open" },
+  { id: "qc-2", sample: "Urine cup", issue: "Invalid container", status: "Open" },
+  { id: "qc-3", sample: "Biopsy vial", issue: "Volume too low", status: "Closed" },
 ];
 
-const equipmentStatus = [
-  { device: "MRI scanner", state: "Operational" },
-  { device: "Ventilator #12", state: "Maintenance" },
-  { device: "Ultrasound unit", state: "Available" },
+const initialEquipmentStatus = [
+  { id: "eq-1", device: "MRI scanner", status: "Operational", calibrationDue: "2026-06-02" },
+  { id: "eq-2", device: "CT unit", status: "Down", calibrationDue: "2026-05-28" },
+  { id: "eq-3", device: "Blood analyzer", status: "Available", calibrationDue: "2026-06-10" },
 ];
 
-const alertsList = [
-  { message: "Patient D urgent sample needs pickup.", severity: "High", time: "09:10" },
-  { message: "Test result upload delayed for Ward 2.", severity: "Normal", time: "09:55" },
+const initialAlerts = [
+  { id: "alert-1", message: "Urgent blood work requested for PAT-1001.", severity: "Critical", time: "09:12" },
+  { id: "alert-2", message: "Priority imaging test marked for PAT-1010.", severity: "High", time: "09:40" },
 ];
 
 export default function TechnicianDashboard() {
   const [patientId, setPatientId] = useState("");
+  const [resultValue, setResultValue] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadMessage, setUploadMessage] = useState("");
   const [note, setNote] = useState("");
   const [logs, setLogs] = useState([
-    "Updated ICU monitor thresholds.",
-    "Confirmed emergency lighting in Ward 3.",
+    "Validated urgent lab panel for Ward 4.",
+    "Re-routed CT unit calibration request to maintenance.",
   ]);
+  const [pendingLabTests, setPendingLabTests] = useState(initialPendingLabTests);
+  const [qualityChecks, setQualityChecks] = useState(initialQualityChecks);
+  const [equipmentStatus, setEquipmentStatus] = useState(initialEquipmentStatus);
+  const [alertsList, setAlertsList] = useState(initialAlerts);
   const [tasks, setTasks] = useState([]);
   const [taskLoading, setTaskLoading] = useState(true);
   const [taskError, setTaskError] = useState("");
+
+  const acceptedFileTypes = ["application/pdf", "image/png", "image/jpeg"];
+
+  const handleUpload = (e) => {
+    e.preventDefault();
+
+    if (!patientId.trim()) {
+      setUploadMessage("Patient ID is required.");
+      return;
+    }
+
+    if (!selectedFile && !resultValue.trim()) {
+      setUploadMessage("Please upload a file or enter a numeric result.");
+      return;
+    }
+
+    if (selectedFile && !acceptedFileTypes.includes(selectedFile.type)) {
+      setUploadMessage("Only PDF, PNG, and JPEG file formats are accepted.");
+      return;
+    }
+
+    setUploadMessage(
+      selectedFile
+        ? `Uploaded ${selectedFile.name} for ${patientId}.`
+        : `Recorded numeric result for ${patientId}: ${resultValue}`,
+    );
+    setSelectedFile(null);
+    setResultValue("");
+    setPatientId("");
+  };
 
   const addNote = (e) => {
     e.preventDefault();
@@ -44,15 +79,28 @@ export default function TechnicianDashboard() {
     setNote("");
   };
 
-  const handleUpload = (e) => {
-    e.preventDefault();
-    if (!patientId || !selectedFile) {
-      setUploadMessage("Please select a patient and a file before uploading.");
-      return;
-    }
-    setUploadMessage(`Uploaded ${selectedFile.name} for ${patientId}.`);
-    setSelectedFile(null);
-    setPatientId("");
+  const requestRecollection = (id) => {
+    setQualityChecks((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, status: "Recollection requested" } : item,
+      ),
+    );
+    setAlertsList((prev) => [
+      {
+        id: `alert-${prev.length + 1}`,
+        message: "Recollection requested for an invalid sample.",
+        severity: "High",
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      },
+      ...prev,
+    ]);
+  };
+
+  const updateTaskStatus = (taskId, newStatus) => {
+    setTasks((prev) =>
+      prev.map((task) => (task._id === taskId ? { ...task, status: newStatus } : task)),
+    );
+    setLogs((prev) => [`Updated task ${taskId} to ${newStatus}.`, ...prev]);
   };
 
   useEffect(() => {
@@ -75,11 +123,11 @@ export default function TechnicianDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8 rounded-3xl bg-white p-8 shadow-xl border border-slate-100">
           <h1 className="text-3xl font-bold text-slate-900">Technician Dashboard</h1>
           <p className="mt-2 text-slate-600 max-w-2xl">
-            Monitor equipment checks, follow maintenance protocols, and coordinate technical support across hospital wards.
+            Track lab tests, upload results, manage equipment status, and complete doctor-assigned tasks from a single technician view.
           </p>
         </div>
 
@@ -88,10 +136,16 @@ export default function TechnicianDashboard() {
             <h2 className="text-xl font-semibold text-slate-900 mb-4">Pending lab tests</h2>
             <ul className="space-y-3 text-sm text-slate-700">
               {pendingLabTests.map((item) => (
-                <li key={`${item.patient}-${item.test}`} className="rounded-2xl bg-slate-50 p-4">
-                  <div className="font-semibold">{item.patient}</div>
-                  <div className="text-slate-500">{item.test}</div>
-                  <div className="mt-2 text-sm text-slate-700">Due: {item.due}</div>
+                <li
+                  key={item.id}
+                  className={`rounded-2xl p-4 ${item.priority === "Urgent" ? "bg-red-50 border border-red-200" : "bg-slate-50"}`}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="font-semibold text-slate-900">{item.testType} / {item.patientId}</div>
+                    <div className={`rounded-full px-3 py-1 text-xs font-semibold ${item.priority === "Urgent" ? "bg-red-600 text-white" : item.priority === "High" ? "bg-amber-500 text-slate-900" : "bg-slate-200 text-slate-700"}`}>
+                      {item.priority}
+                    </div>
+                  </div>
+                  <div className="mt-2 text-slate-600">Status: {item.status}</div>
                 </li>
               ))}
             </ul>
@@ -113,12 +167,24 @@ export default function TechnicianDashboard() {
                 <label className="block text-sm font-medium text-slate-700">Result file</label>
                 <input
                   type="file"
+                  accept=".pdf,image/png,image/jpeg"
                   onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                   className="mt-1 w-full text-sm text-slate-700"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Numeric result (optional)</label>
+                <input
+                  value={resultValue}
+                  onChange={(e) => setResultValue(e.target.value)}
+                  type="number"
+                  step="any"
+                  className="mt-1 w-full rounded-2xl border border-slate-300 px-4 py-2"
+                  placeholder="Enter a value if no file is uploaded"
+                />
+              </div>
               <button type="submit" className="rounded-2xl bg-slate-900 px-4 py-2 text-white hover:bg-slate-800">
-                Upload
+                Upload result
               </button>
               {uploadMessage && <p className="text-sm text-slate-600">{uploadMessage}</p>}
             </form>
@@ -128,9 +194,19 @@ export default function TechnicianDashboard() {
             <h2 className="text-xl font-semibold text-slate-900 mb-4">Quality checks</h2>
             <ul className="space-y-3 text-sm text-slate-700">
               {qualityChecks.map((item) => (
-                <li key={item.item} className="rounded-2xl bg-slate-50 p-4">
-                  <div className="font-semibold">{item.item}</div>
-                  <div className="mt-1 text-slate-600">Status: {item.status}</div>
+                <li key={item.id} className="rounded-2xl bg-slate-50 p-4">
+                  <div className="font-semibold text-slate-900">{item.sample}</div>
+                  <div className="mt-1 text-slate-600">Issue: {item.issue}</div>
+                  <div className="mt-2 text-xs uppercase tracking-wide text-slate-500">Status: {item.status}</div>
+                  {item.status !== "Closed" && (
+                    <button
+                      type="button"
+                      onClick={() => requestRecollection(item.id)}
+                      className="mt-3 inline-flex rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-slate-900 hover:bg-amber-600"
+                    >
+                      Request re-collection
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -142,9 +218,10 @@ export default function TechnicianDashboard() {
             <h2 className="text-xl font-semibold text-slate-900 mb-4">Equipment status</h2>
             <ul className="space-y-3 text-sm text-slate-700">
               {equipmentStatus.map((item) => (
-                <li key={item.device} className="rounded-2xl bg-slate-50 p-4">
-                  <div className="font-semibold">{item.device}</div>
-                  <div className="mt-1 text-slate-600">{item.state}</div>
+                <li key={item.id} className="rounded-2xl bg-slate-50 p-4">
+                  <div className="font-semibold text-slate-900">{item.device}</div>
+                  <div className="mt-1 text-slate-600">Status: {item.status}</div>
+                  <div className="mt-2 text-xs uppercase tracking-wide text-slate-500">Calibration due: {item.calibrationDue}</div>
                 </li>
               ))}
             </ul>
@@ -153,10 +230,12 @@ export default function TechnicianDashboard() {
           <div className="rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900 mb-4">Alerts</h2>
             <ul className="space-y-3 text-sm text-slate-700">
-              {alertsList.map((alert, idx) => (
-                <li key={idx} className="rounded-2xl bg-slate-50 p-4">
-                  <div className="font-semibold">{alert.severity}</div>
-                  <div className="text-slate-600 mt-1">{alert.message}</div>
+              {alertsList.map((alert) => (
+                <li
+                  key={alert.id}
+                  className={`rounded-2xl p-4 ${alert.severity === "Critical" ? "bg-red-50 border border-red-200" : "bg-slate-50"}`}>
+                  <div className="font-semibold text-slate-900">{alert.severity}</div>
+                  <div className="mt-1 text-slate-600">{alert.message}</div>
                   <div className="mt-2 text-xs uppercase tracking-wide text-slate-500">{alert.time}</div>
                 </li>
               ))}
@@ -172,23 +251,48 @@ export default function TechnicianDashboard() {
             ) : tasks.length === 0 ? (
               <p className="text-slate-600">No tasks assigned yet.</p>
             ) : (
-              <ul className="space-y-3 text-sm text-slate-700">
+              <div className="space-y-4">
                 {tasks.map((task) => (
-                  <li key={task._id} className="rounded-2xl bg-slate-50 p-4">
-                    <div className="font-semibold text-slate-900">{task.title}</div>
-                    <div className="text-slate-500 mt-1">{task.description || 'No additional details.'}</div>
-                    <div className="mt-2 text-xs uppercase tracking-wide text-slate-500">
-                      {task.ward ? `${task.ward} · ` : ''}{task.department || 'General'} · {task.status}
+                  <div key={task._id} className="rounded-2xl bg-slate-50 p-4 border border-slate-200">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="font-semibold text-slate-900">{task.title}</div>
+                        <div className="mt-1 text-slate-600">{task.description || "No description provided."}</div>
+                      </div>
+                      <div className="text-xs uppercase tracking-wide text-slate-500">{task.status}</div>
                     </div>
-                  </li>
+                    <div className="mt-3 flex flex-wrap gap-2 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => updateTaskStatus(task._id, "pending")}
+                        className="rounded-full bg-slate-200 px-3 py-1 text-slate-800 hover:bg-slate-300"
+                      >
+                        Pending
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateTaskStatus(task._id, "in-progress")}
+                        className="rounded-full bg-amber-200 px-3 py-1 text-slate-900 hover:bg-amber-300"
+                      >
+                        In progress
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateTaskStatus(task._id, "completed")}
+                        className="rounded-full bg-emerald-200 px-3 py-1 text-emerald-900 hover:bg-emerald-300"
+                      >
+                        Completed
+                      </button>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
         </div>
 
         <div className="rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900 mb-4">Recent maintenance logs</h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-4">Recent technician activity</h2>
           <ul className="space-y-3 text-sm text-slate-700">
             {logs.map((entry, idx) => (
               <li key={idx} className="rounded-2xl bg-slate-50 p-4">
@@ -196,12 +300,6 @@ export default function TechnicianDashboard() {
               </li>
             ))}
           </ul>
-        </div>
-      </div>
-    </div>
-  );
-}
-          </div>
         </div>
       </div>
     </div>
