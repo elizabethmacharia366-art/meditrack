@@ -73,9 +73,15 @@ exports.updateTask = async (req, res, next) => {
       return res.status(400).json({ error: 'Task status is required' });
     }
 
-    const normalizedStatus = ['Scheduled', 'In progress', 'Completed'].find(
-      (value) => value.toLowerCase() === status.toLowerCase(),
-    );
+    const statusMap = {
+      scheduled: 'Scheduled',
+      pending: 'Scheduled',
+      'in progress': 'In progress',
+      'in-progress': 'In progress',
+      completed: 'Completed',
+    };
+
+    const normalizedStatus = statusMap[status.toLowerCase()];
 
     if (!normalizedStatus) {
       return res.status(400).json({ error: 'Invalid task status' });

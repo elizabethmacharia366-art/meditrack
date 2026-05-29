@@ -102,24 +102,24 @@ export default function TechnicianTasks() {
                   <div className="mt-4 flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => updateTaskStatus(task._id, "pending")}
+                      onClick={() => updateTaskStatus(task._id, "Scheduled")}
                       className="rounded-full bg-slate-200 px-3 py-1 text-slate-800 hover:bg-slate-300"
                     >
-                      pending
+                      Scheduled
                     </button>
                     <button
                       type="button"
-                      onClick={() => updateTaskStatus(task._id, "in-progress")}
+                      onClick={() => updateTaskStatus(task._id, "In progress")}
                       className="rounded-full bg-amber-200 px-3 py-1 text-slate-900 hover:bg-amber-300"
                     >
-                      in-progress
+                      In progress
                     </button>
                     <button
                       type="button"
-                      onClick={() => updateTaskStatus(task._id, "completed")}
+                      onClick={() => updateTaskStatus(task._id, "Completed")}
                       className="rounded-full bg-emerald-200 px-3 py-1 text-emerald-900 hover:bg-emerald-300"
                     >
-                      completed
+                      Completed
                     </button>
                   </div>
 
