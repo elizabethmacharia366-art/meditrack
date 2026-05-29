@@ -9,7 +9,6 @@ export default function Register() {
     email: "",
     password: "",
     role: "",
-    location: "",
   });
   const [error, setError] = useState("");
   const [info, setInfo] = useState(null);
@@ -32,10 +31,6 @@ export default function Register() {
     setInfo(null);
     if (!formData.name || !formData.email || !formData.password || !formData.role) {
       setError("All fields are required.");
-      return;
-    }
-    if (formData.role === "hospital" && !formData.location.trim()) {
-      setError("Hospital registrations need a facility location.");
       return;
     }
     try {
@@ -113,27 +108,12 @@ export default function Register() {
               <option value="">Select role</option>
               <option value="patient">Patient</option>
               <option value="doctor">Doctor</option>
-              <option value="hospital">Hospital</option>
             </select>
           </div>
 
           {formData.role && (
             <div className="bg-yellow-50 border border-yellow-200 text-yellow-900 rounded p-3 text-sm">
               Accounts are reviewed by an admin before access is enabled.
-            </div>
-          )}
-
-          {formData.role === "hospital" && (
-            <div>
-              <label className="block mb-2 font-medium text-gray-700">Facility location</label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="City, state, or address"
-              />
             </div>
           )}
 
