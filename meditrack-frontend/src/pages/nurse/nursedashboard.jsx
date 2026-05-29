@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { getTasks } from "../../service/api";
 
 const schedule = [
   { shift: "Morning", time: "07:00 - 15:00", ward: "Ward 4A", assignment: "General Medicine" },
@@ -17,7 +18,13 @@ export default function NurseDashboard() {
   const [patientName, setPatientName] = useState("");
   const [vitals, setVitals] = useState({ bp: "", hr: "", oxygen: "", temperature: "" });
   const [notes, setNotes] = useState("");
-  const [alerts, setAlerts] = useState([]);
+  const [alerts, setAlerts] = useState([
+    { message: "Patient A missed the 08:00 medication dose.", severity: "Urgent", time: "08:05" },
+    { message: "Lab report ready for patient B.", severity: "Normal", time: "09:20" },
+  ]);
+  const [tasks, setTasks] = useState([]);
+  const [taskLoading, setTaskLoading] = useState(true);
+  const [taskError, setTaskError] = useState("");
 
   const submitVitals = (e) => {
     e.preventDefault();
@@ -30,14 +37,40 @@ export default function NurseDashboard() {
     setNotes("");
   };
 
-  const reminderList = useMemo(
+  const medicationAdministration = useMemo(
     () => [
-      { med: "Acetaminophen", time: "09:00", status: "On track" },
-      { med: "Insulin", time: "12:00", status: "Pending" },
-      { med: "Amoxicillin", time: "18:00", status: "Missed" },
+      { med: "Acetaminophen", dose: "500mg", schedule: "09:00", status: "On track" },
+      { med: "Insulin", dose: "10 units", schedule: "12:00", status: "Pending" },
+      { med: "Amoxicillin", dose: "250mg", schedule: "18:00", status: "Missed" },
     ],
     [],
   );
+
+  const careNotes = useMemo(
+    () => [
+      { patient: "Maria J.", note: "BP stable, continue IV fluids." },
+      { patient: "Robert K.", note: "Oxygen support maintained. Reassess in 2 hours." },
+    ],
+    [],
+  );
+
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        setTaskLoading(true);
+        const { data } = await getTasks();
+        setTasks(Array.isArray(data) ? data : []);
+        setTaskError("");
+      } catch (err) {
+        setTasks([]);
+        setTaskError(err.response?.data?.error || "Unable to load assigned tasks.");
+      } finally {
+        setTaskLoading(false);
+      }
+    };
+
+    loadTasks();
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -102,22 +135,75 @@ export default function NurseDashboard() {
                 </div>
               ))}
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Care notes</label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-slate-300 px-4 py-2"
-                  rows={4}
-                  placeholder="Add quick notes about assessment, concerns, or follow-up"
-                />
-              </div>
-
               <button className="rounded-2xl bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700">
                 Save vitals and notes
               </button>
             </form>
           </div>
+
+          <div className="rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900 mb-4">Medication administration</h2>
+            <div className="space-y-3 text-sm text-slate-700">
+              {medicationAdministration.map((item) => (
+                <div key={item.med} className="rounded-2xl bg-slate-50 p-4">
+                  <div className="font-semibold">{item.med}</div>
+                  <div className="text-slate-500">{item.dose} • {item.schedule}</div>
+                  <div className="mt-2 text-sm text-slate-700">Status: {item.status}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-3 mb-8">
+          <div className="rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900 mb-4">Care notes</h2>
+            <ul className="space-y-3 text-sm text-slate-700">
+              {careNotes.map((entry) => (
+                <li key={entry.patient} className="rounded-2xl bg-slate-50 p-4">
+                  <div className="font-semibold">{entry.patient}</div>
+                  <div className="mt-1 text-slate-600">{entry.note}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900 mb-4">Alerts</h2>
+            <ul className="space-y-3 text-sm text-slate-700">
+              {alerts.map((alert, idx) => (
+                <li key={idx} className="rounded-2xl bg-slate-50 p-4">
+                  <div className="font-semibold">{alert.severity}</div>
+                  <div className="text-slate-600 mt-1">{alert.message}</div>
+                  <div className="mt-2 text-xs uppercase tracking-wide text-slate-500">{alert.time}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900 mb-4">Assigned tasks</h2>
+            {taskLoading ? (
+              <p className="text-slate-500">Loading tasks…</p>
+            ) : taskError ? (
+              <p className="text-red-600">{taskError}</p>
+            ) : tasks.length === 0 ? (
+              <p className="text-slate-600">No tasks assigned yet.</p>
+            ) : (
+              <ul className="space-y-3 text-sm text-slate-700">
+                {tasks.map((task) => (
+                  <li key={task._id} className="rounded-2xl bg-slate-50 p-4">
+                    <div className="font-semibold text-slate-900">{task.title}</div>
+                    <div className="text-slate-600 mt-1">{task.description || 'No additional details.'}</div>
+                    <div className="mt-2 text-xs uppercase tracking-wide text-slate-500">
+                      {task.ward ? `${task.ward} · ` : ''}{task.department || 'General'} · {task.status}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
 
           <div className="rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900 mb-4">Recent care notes</h2>

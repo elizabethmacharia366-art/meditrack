@@ -62,6 +62,13 @@ export const adminApproveUser = (id) => API.post(`/admin/users/${id}/approve`);
 export const adminRejectUser = (id, reason) =>
   API.post(`/admin/users/${id}/reject`, { reason });
 
+export const getTasks = () => API.get('/tasks');
+export const getAssignableStaff = () => API.get('/tasks/staff');
+export const createTask = (data) => API.post('/tasks', data);
+
+export const adminRejectUser = (id, reason) =>
+  API.post(`/admin/users/${id}/reject`, { reason });
+
 export const setAuthToken = (token) => {
   if (token) {
     localStorage.setItem('token', token);

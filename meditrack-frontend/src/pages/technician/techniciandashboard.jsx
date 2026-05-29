@@ -1,10 +1,5 @@
-import React, { useMemo, useState } from "react";
-
-const tasks = [
-  { title: "Check infusion pump", assigned: "Ward 2B", status: "Scheduled" },
-  { title: "Inspect telemetry monitors", assigned: "ICU", status: "In progress" },
-  { title: "Verify imaging equipment", assigned: "Radiology", status: "Pending" },
-];
+import React, { useEffect, useMemo, useState } from "react";
+import { getTasks } from "../../service/api";
 
 const reminderList = [
   { item: "Ventilator calibration", time: "08:00", status: "Due" },
@@ -18,6 +13,9 @@ export default function TechnicianDashboard() {
     "Updated ICU monitor thresholds.",
     "Confirmed emergency lighting in Ward 3.",
   ]);
+  const [tasks, setTasks] = useState([]);
+  const [taskLoading, setTaskLoading] = useState(true);
+  const [taskError, setTaskError] = useState("");
 
   const addNote = (e) => {
     e.preventDefault();
@@ -27,6 +25,24 @@ export default function TechnicianDashboard() {
   };
 
   const upcoming = useMemo(() => reminderList.filter((item) => item.status !== "Complete"), []);
+
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        setTaskLoading(true);
+        const { data } = await getTasks();
+        setTasks(Array.isArray(data) ? data : []);
+        setTaskError("");
+      } catch (err) {
+        setTasks([]);
+        setTaskError(err.response?.data?.error || "Unable to load assigned tasks.");
+      } finally {
+        setTaskLoading(false);
+      }
+    };
+
+    loadTasks();
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -41,15 +57,25 @@ export default function TechnicianDashboard() {
         <div className="grid gap-6 xl:grid-cols-3 mb-8">
           <div className="rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900 mb-4">Assigned tasks</h2>
-            <ul className="space-y-3 text-sm text-slate-700">
-              {tasks.map((task) => (
-                <li key={task.title} className="rounded-2xl bg-slate-50 p-4">
-                  <div className="font-semibold">{task.title}</div>
-                  <div className="text-slate-500">{task.assigned}</div>
-                  <div className="mt-2 text-sm">{task.status}</div>
-                </li>
-              ))}
-            </ul>
+            {taskLoading ? (
+              <p className="text-slate-500">Loading tasks…</p>
+            ) : taskError ? (
+              <p className="text-red-600">{taskError}</p>
+            ) : tasks.length === 0 ? (
+              <p className="text-slate-600">No tasks assigned yet.</p>
+            ) : (
+              <ul className="space-y-3 text-sm text-slate-700">
+                {tasks.map((task) => (
+                  <li key={task._id} className="rounded-2xl bg-slate-50 p-4">
+                    <div className="font-semibold text-slate-900">{task.title}</div>
+                    <div className="text-slate-500 mt-1">{task.description || 'No additional details.'}</div>
+                    <div className="mt-2 text-xs uppercase tracking-wide text-slate-500">
+                      {task.ward ? `${task.ward} · ` : ''}{task.department || 'General'} · {task.status}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="rounded-3xl bg-white border border-slate-100 p-6 shadow-sm xl:col-span-2">

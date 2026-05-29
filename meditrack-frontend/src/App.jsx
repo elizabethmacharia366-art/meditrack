@@ -10,6 +10,7 @@ import ManageHospitals from "./pages/admin/managehospitals";
 import PendingUsers from "./pages/admin/pendingusers";
 
 import DoctorDashboard from "./pages/doctor/doctordashboard";
+import TaskAssignments from "./pages/doctor/taskassignments";
 import Patients from "./pages/doctor/patient";
 import DoctorPatientDetail from "./pages/doctor/patientdetail";
 import Prescriptions from "./pages/doctor/prescription";
@@ -171,6 +172,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["doctor"]}>
               <DoctorAlerts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/doctor/tasks"
+          element={
+            <ProtectedRoute allowedRoles={["doctor"]}>
+              <TaskAssignments />
             </ProtectedRoute>
           }
         />

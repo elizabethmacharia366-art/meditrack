@@ -24,6 +24,10 @@ export default function DoctorDashboard() {
           <h2 className="text-lg font-semibold">Prescriptions</h2>
           <p className="text-gray-600">Issue and manage prescriptions.</p>
         </Link>
+        <Link to="/doctor/tasks" className="bg-white shadow-md rounded-lg p-4 hover:bg-blue-50">
+          <h2 className="text-lg font-semibold">Assign Tasks</h2>
+          <p className="text-gray-600">Create work orders for nurses and technicians.</p>
+        </Link>
         <Link to="/doctor/clinical-dashboard" className="bg-white shadow-md rounded-lg p-4 hover:bg-blue-50">
           <h2 className="text-lg font-semibold">Clinical Dashboard</h2>
           <p className="text-gray-600">Monitor pending lab results and alerts across patients.</p>
