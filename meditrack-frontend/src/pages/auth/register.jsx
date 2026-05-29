@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../context/authcontext";
 import { useNavigate } from "react-router-dom";
-import { getRoleHomePath } from "../../utils/roleRoutes";
 
 export default function Register() {
   const { register, logout } = useContext(AuthContext);
@@ -13,6 +12,7 @@ export default function Register() {
     location: "",
   });
   const [error, setError] = useState("");
+  const [info, setInfo] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -134,6 +134,12 @@ export default function Register() {
                 className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="City, state, or address"
               />
+            </div>
+          )}
+
+          {info && (
+            <div className="text-green-700 text-sm bg-green-50 border border-green-200 rounded p-2">
+              {info}
             </div>
           )}
 
