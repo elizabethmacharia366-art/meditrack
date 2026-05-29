@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getTasks } from "../../service/api";
+import { getTasks, updateTask, addTaskNote } from "../../service/api";
 import WelcomeBanner from "../../components/welcomebanner";
 
 export default function TechnicianTasks() {
@@ -8,6 +8,7 @@ export default function TechnicianTasks() {
   const [taskNotes, setTaskNotes] = useState({});
   const [taskLoading, setTaskLoading] = useState(true);
   const [taskError, setTaskError] = useState("");
+  const [taskActionLoading, setTaskActionLoading] = useState(false);
 
   useEffect(() => {
     const loadTasks = async () => {
@@ -27,18 +28,39 @@ export default function TechnicianTasks() {
     loadTasks();
   }, []);
 
-  const updateTaskStatus = (taskId, status) => {
-    setTasks((prev) => prev.map((task) => (task._id === taskId ? { ...task, status } : task)));
+  const updateTaskStatus = async (taskId, status) => {
+    try {
+      setTaskActionLoading(true);
+      const normalizedStatus = status;
+      const { data } = await updateTask(taskId, { status: normalizedStatus });
+      setTasks((prev) => prev.map((task) => (task._id === taskId ? data : task)));
+      setTaskError("");
+    } catch (err) {
+      setTaskError(err.response?.data?.error || "Unable to update task status.");
+    } finally {
+      setTaskActionLoading(false);
+    }
   };
 
   const handleNoteChange = (taskId, value) => {
     setTaskNotes((prev) => ({ ...prev, [taskId]: value }));
   };
 
-  const submitNote = (taskId) => {
+  const submitNote = async (taskId) => {
     const note = taskNotes[taskId]?.trim();
     if (!note) return;
-    setTaskNotes((prev) => ({ ...prev, [taskId]: "" }));
+
+    try {
+      setTaskActionLoading(true);
+      const { data } = await addTaskNote(taskId, { message: note });
+      setTasks((prev) => prev.map((task) => (task._id === taskId ? data : task)));
+      setTaskNotes((prev) => ({ ...prev, [taskId]: "" }));
+      setTaskError("");
+    } catch (err) {
+      setTaskError(err.response?.data?.error || "Unable to save task note.");
+    } finally {
+      setTaskActionLoading(false);
+    }
   };
 
   return (

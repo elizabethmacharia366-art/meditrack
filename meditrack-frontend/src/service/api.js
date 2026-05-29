@@ -65,6 +65,8 @@ export const adminRejectUser = (id, reason) =>
 export const getTasks = () => API.get('/tasks');
 export const getAssignableStaff = () => API.get('/tasks/staff');
 export const createTask = (data) => API.post('/tasks', data);
+export const updateTask = (id, data) => API.put(`/tasks/${id}`, data);
+export const addTaskNote = (id, data) => API.post(`/tasks/${id}/notes`, data);
 
 export const adminRejectUser = (id, reason) =>
   API.post(`/admin/users/${id}/reject`, { reason });
