@@ -23,7 +23,19 @@ import PatientDashboard from "./pages/patient/patientdashboard";
 import ViewPrescriptions from "./pages/patient/viewprescriptions";
 import ManageStaff from "./pages/admin/managestaff";
 import NurseDashboard from "./pages/nurse/nursedashboard";
+import ShiftSchedule from "./pages/nurse/shiftSchedule";
+import PatientMonitoring from "./pages/nurse/patientMonitoring";
+import MedicationAdministration from "./pages/nurse/medicationAdministration";
+import CareNotes from "./pages/nurse/careNotes";
+import NurseAlerts from "./pages/nurse/alerts";
+import NurseTasks from "./pages/nurse/tasks";
 import TechnicianDashboard from "./pages/technician/techniciandashboard";
+import PendingLabTests from "./pages/technician/pendingLabTests";
+import UploadResults from "./pages/technician/uploadResults";
+import QualityChecks from "./pages/technician/qualityChecks";
+import EquipmentStatus from "./pages/technician/equipmentStatus";
+import TechnicianAlerts from "./pages/technician/alerts";
+import TechnicianTasks from "./pages/technician/tasks";
 import BookAppointment from "./pages/patient/bookappointment";
 import Hospitals from "./pages/patient/hospitals";
 import PatientHistory from "./pages/patient/history";
@@ -193,10 +205,106 @@ function App() {
           }
         />
         <Route
+          path="/nurse/shift-schedule"
+          element={
+            <ProtectedRoute allowedRoles={["nurse"]}>
+              <ShiftSchedule />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/nurse/patient-monitoring"
+          element={
+            <ProtectedRoute allowedRoles={["nurse"]}>
+              <PatientMonitoring />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/nurse/medication-administration"
+          element={
+            <ProtectedRoute allowedRoles={["nurse"]}>
+              <MedicationAdministration />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/nurse/care-notes"
+          element={
+            <ProtectedRoute allowedRoles={["nurse"]}>
+              <CareNotes />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/nurse/alerts"
+          element={
+            <ProtectedRoute allowedRoles={["nurse"]}>
+              <NurseAlerts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/nurse/tasks"
+          element={
+            <ProtectedRoute allowedRoles={["nurse"]}>
+              <NurseTasks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/technician"
           element={
             <ProtectedRoute allowedRoles={["technician"]}>
               <TechnicianDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/technician/pending-lab-tests"
+          element={
+            <ProtectedRoute allowedRoles={["technician"]}>
+              <PendingLabTests />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/technician/upload-results"
+          element={
+            <ProtectedRoute allowedRoles={["technician"]}>
+              <UploadResults />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/technician/quality-checks"
+          element={
+            <ProtectedRoute allowedRoles={["technician"]}>
+              <QualityChecks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/technician/equipment-status"
+          element={
+            <ProtectedRoute allowedRoles={["technician"]}>
+              <EquipmentStatus />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/technician/alerts"
+          element={
+            <ProtectedRoute allowedRoles={["technician"]}>
+              <TechnicianAlerts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/technician/tasks"
+          element={
+            <ProtectedRoute allowedRoles={["technician"]}>
+              <TechnicianTasks />
             </ProtectedRoute>
           }
         />
