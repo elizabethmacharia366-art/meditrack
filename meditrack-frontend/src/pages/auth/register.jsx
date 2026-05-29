@@ -10,10 +10,14 @@ export default function Register() {
     password: "",
     role: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  const isStrongPassword = (password) =>
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(password);
 
   useEffect(() => {
     logout();
@@ -31,6 +35,12 @@ export default function Register() {
     setInfo(null);
     if (!formData.name || !formData.email || !formData.password || !formData.role) {
       setError("All fields are required.");
+      return;
+    }
+    if (!isStrongPassword(formData.password)) {
+      setError(
+        "Password must be at least 8 characters and include uppercase, lowercase, number, and symbol."
+      );
       return;
     }
     try {
@@ -87,14 +97,26 @@ export default function Register() {
 
           <div>
             <label className="block mb-2 font-medium text-gray-700">Password</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Enter your password"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-2 pr-20 focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-2 flex items-center px-3 text-sm font-medium text-gray-600 hover:text-gray-800"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Use 8+ characters with uppercase, lowercase, number, and symbol.
+            </p>
           </div>
 
           <div>
