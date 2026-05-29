@@ -19,6 +19,13 @@ const initialEquipmentStatus = [
   { id: "eq-3", device: "Blood analyzer", status: "Available", calibrationDue: "2026-06-10" },
 ];
 
+const quickPanels = [
+  { title: "Assigned tasks", description: "Track your doctor-assigned technical workflows.", accent: "bg-slate-100" },
+  { title: "Lab results", description: "Upload and validate new patient test results.", accent: "bg-slate-100" },
+  { title: "Equipment checks", description: "Monitor device readiness and calibration due dates.", accent: "bg-slate-100" },
+  { title: "Quality control", description: "Resolve sample issues and request recollections.", accent: "bg-slate-100" },
+];
+
 const initialAlerts = [
   { id: "alert-1", message: "Urgent blood work requested for PAT-1001.", severity: "Critical", time: "09:12" },
   { id: "alert-2", message: "Priority imaging test marked for PAT-1010.", severity: "High", time: "09:40" },
@@ -129,6 +136,15 @@ export default function TechnicianDashboard() {
           <p className="mt-2 text-slate-600 max-w-2xl">
             Track lab tests, upload results, manage equipment status, and complete doctor-assigned tasks from a single technician view.
           </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+          {quickPanels.map((panel) => (
+            <div key={panel.title} className={`rounded-3xl p-6 shadow-sm border border-slate-200 ${panel.accent}`}>
+              <h2 className="text-lg font-semibold text-slate-900">{panel.title}</h2>
+              <p className="mt-3 text-sm text-slate-600">{panel.description}</p>
+            </div>
+          ))}
         </div>
 
         <div className="grid gap-6 xl:grid-cols-3 mb-8">
@@ -258,27 +274,28 @@ export default function TechnicianDashboard() {
                       <div>
                         <div className="font-semibold text-slate-900">{task.title}</div>
                         <div className="mt-1 text-slate-600">{task.description || "No description provided."}</div>
+                        <div className="mt-2 text-sm text-slate-600">Assigned by {task.createdBy?.name || "Doctor"}</div>
                       </div>
                       <div className="text-xs uppercase tracking-wide text-slate-500">{task.status}</div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2 text-sm">
                       <button
                         type="button"
-                        onClick={() => updateTaskStatus(task._id, "pending")}
+                        onClick={() => updateTaskStatus(task._id, "Scheduled")}
                         className="rounded-full bg-slate-200 px-3 py-1 text-slate-800 hover:bg-slate-300"
                       >
-                        Pending
+                        Scheduled
                       </button>
                       <button
                         type="button"
-                        onClick={() => updateTaskStatus(task._id, "in-progress")}
+                        onClick={() => updateTaskStatus(task._id, "In progress")}
                         className="rounded-full bg-amber-200 px-3 py-1 text-slate-900 hover:bg-amber-300"
                       >
                         In progress
                       </button>
                       <button
                         type="button"
-                        onClick={() => updateTaskStatus(task._id, "completed")}
+                        onClick={() => updateTaskStatus(task._id, "Completed")}
                         className="rounded-full bg-emerald-200 px-3 py-1 text-emerald-900 hover:bg-emerald-300"
                       >
                         Completed
