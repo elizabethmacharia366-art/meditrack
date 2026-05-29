@@ -42,8 +42,13 @@ export default function Login() {
       navigate(getRoleHomePath(u.role), { replace: true });
     } catch (err) {
       const data = err.response?.data;
-      setError(data?.error || err.message || "Login failed");
-      if (data?.status === "pending") setErrorKind("pending");
+      if (data?.status === "pending") {
+        setInfo(data.error || "Your account is awaiting admin approval.");
+        setInfoKind("pending");
+        setError("");
+      } else {
+        setError(data?.error || err.message || "Login failed");
+      }
       setSubmitting(false);
     }
   };
