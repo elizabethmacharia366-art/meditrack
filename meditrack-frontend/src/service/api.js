@@ -68,9 +68,6 @@ export const createTask = (data) => API.post('/tasks', data);
 export const updateTask = (id, data) => API.put(`/tasks/${id}`, data);
 export const addTaskNote = (id, data) => API.post(`/tasks/${id}/notes`, data);
 
-export const adminRejectUser = (id, reason) =>
-  API.post(`/admin/users/${id}/reject`, { reason });
-
 export const setAuthToken = (token) => {
   if (token) {
     localStorage.setItem('token', token);
