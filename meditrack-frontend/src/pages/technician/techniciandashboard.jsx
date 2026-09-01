@@ -119,7 +119,6 @@ export default function TechnicianDashboard() {
               ))}
             </ul>
           </div>
-        </div>
 
         <div className="grid gap-6 xl:grid-cols-3 mb-8">
           <div className="rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
