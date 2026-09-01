@@ -14,5 +14,8 @@ module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     return res.end(JSON.stringify({ error: 'Database connection failed' }));
   }
-  return app(req, res);
+  // Properly delegate to Express app handler
+  return new Promise((resolve) => {
+    app(req, res, () => resolve());
+  });
 };
